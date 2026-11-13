@@ -537,9 +537,9 @@
     </div>
 
     <div class="select-group">
-      <label>Fascia Oraria</label>
+      <label>Fascia Oraria (6 ore)</label>
       <div class="select-wrapper">
-        <div class="select-display" id="windowDisplay">Adesso</div>
+        <div class="select-display" id="windowDisplay">Oggi 00:00 – 06:00</div>
         <select id="windowSelect" onchange="onWindowChange()"></select>
       </div>
     </div>
@@ -578,33 +578,60 @@
 
     const STATION_BY_ID = Object.fromEntries(STATIONS.map(s => [s.id, s]));
 
+    // 8 fasce fisse da 6 ore (4 per Oggi + 4 per Domani) da mezzanotte a mezzanotte
+    const FIXED_SLOTS = [
+      { slot: 0, label: "Oggi 00:00 – 06:00" },
+      { slot: 1, label: "Oggi 06:00 – 12:00" },
+      { slot: 2, label: "Oggi 12:00 – 18:00" },
+      { slot: 3, label: "Oggi 18:00 – 24:00" },
+      { slot: 4, label: "Domani 00:00 – 06:00" },
+      { slot: 5, label: "Domani 06:00 – 12:00" },
+      { slot: 6, label: "Domani 12:00 – 18:00" },
+      { slot: 7, label: "Domani 18:00 – 24:00" }
+    ];
+
     const BOOKMARK_SVG = `<svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
 
+    function getCurrentSlotIndex() {
+      const h = new Date().getHours();
+      return Math.min(3, Math.max(0, Math.floor(h / 6)));
+    }
+
     let activeTab = "solutions";
-    let currentOffset = 0;
-    let baseTs = Date.now();
-    const WINDOWS = 6;
-    const WINDOW_MS = 5 * 3600000;
+    let currentSlot = getCurrentSlotIndex();
     let currentViewData = null;
     let expandedStops = { leg1: false, leg2: false };
 
+    function toTitleCase(str) {
+      return String(str || "")
+        .toLowerCase()
+        .replace(/(^|[\s'.\-/])([a-zà-ù])/g, (m, a, b) => a + b.toUpperCase());
+    }
+
     function abbrStation(name) {
       if (!name) return "";
-      const s = String(name).trim();
+      const raw = String(name).trim();
       const match = STATIONS.find(
-        st => st.name.toLowerCase() === s.toLowerCase() || st.short.toLowerCase() === s.toLowerCase()
+        st => st.name.toLowerCase() === raw.toLowerCase() || st.short.toLowerCase() === raw.toLowerCase()
       );
       if (match) return match.short;
 
-      return s
-        .replace(/^MILANO\s+PORTA\s+/i, "MI P. ")
-        .replace(/^MILANO\s+P\.\s*/i, "MI P. ")
-        .replace(/^MILANO\s+GRECO\s+PIRELLI/i, "MI Greco P.")
-        .replace(/^MILANO\s+/i, "MI ")
-        .replace(/^CASSANO\s+D'ADDA/i, "Cassano d'A.")
-        .replace(/\bPORTA\s+/gi, "P. ")
-        .replace(/\bSAN\s+/gi, "S. ")
-        .replace(/\bSANTA\s+/gi, "S.ta ");
+      // Converte prima in Title Case (es. PAVIA -> Pavia, VOGHERA -> Voghera)
+      const titled = toTitleCase(raw);
+
+      return titled
+        .replace(/^Milano\s+Porta\s+/i, "MI P. ")
+        .replace(/^Milano\s+P\.\s*/i, "MI P. ")
+        .replace(/^Milano\s+Greco\s+Pirelli/i, "MI Greco P.")
+        .replace(/^Milano\s+/i, "MI ")
+        .replace(/^Cassano\s+D'adda/i, "Cassano d'A.")
+        .replace(/\bD'([A-ZÀ-Ù])/g, (m, c) => "d'" + c)
+        .replace(/\bDi\b/g, "di")
+        .replace(/\bDel\b/g, "del")
+        .replace(/\bDella\b/g, "della")
+        .replace(/\bPorta\s+/gi, "P. ")
+        .replace(/\bSan\s+/gi, "S. ")
+        .replace(/\bSanta\s+/gi, "S.ta ");
     }
 
     function fmtTime(msOrIso) {
@@ -873,34 +900,27 @@
       document.getElementById("toDisplay").textContent = STATION_BY_ID[toId]?.short || "";
     }
 
-    function windowLabel(k) {
-      const start = baseTs + k * WINDOW_MS;
-      const end = start + WINDOW_MS;
-      const startDay = new Date(start).getDate();
-      const baseDay = new Date(baseTs).getDate();
-      const prefix = k === 0 ? "Adesso" : (startDay !== baseDay ? "Domani " : "Oggi ") + fmtTime(start);
-      return `${prefix} – ${fmtTime(end)}`;
+    function windowLabel(slotIdx) {
+      const found = FIXED_SLOTS.find(s => s.slot === slotIdx);
+      return found ? found.label : FIXED_SLOTS[0].label;
     }
 
     function renderWindowSelect() {
       const sel = document.getElementById("windowSelect");
-      let html = "";
-      for (let k = 0; k < WINDOWS; k++) {
-        html += `<option value="${k}" ${k === currentOffset ? "selected" : ""}>${windowLabel(k)}</option>`;
-      }
-      sel.innerHTML = html;
-      document.getElementById("windowDisplay").textContent = windowLabel(currentOffset);
+      sel.innerHTML = FIXED_SLOTS.map(
+        s => `<option value="${s.slot}" ${s.slot === currentSlot ? "selected" : ""}>${s.label}</option>`
+      ).join("");
+      document.getElementById("windowDisplay").textContent = windowLabel(currentSlot);
     }
 
     function onWindowChange() {
-      currentOffset = parseInt(document.getElementById("windowSelect").value, 10) || 0;
-      document.getElementById("windowDisplay").textContent = windowLabel(currentOffset);
+      currentSlot = parseInt(document.getElementById("windowSelect").value, 10) || 0;
+      document.getElementById("windowDisplay").textContent = windowLabel(currentSlot);
       if (activeTab === "pinned") switchTab("solutions");
       loadTrains();
     }
 
     function refreshAll() {
-      baseTs = Date.now();
       renderWindowSelect();
       if (activeTab === "pinned" && getPinned()) {
         refreshPinnedLive();
@@ -912,9 +932,6 @@
     function onStationChange() {
       populateToSelect(document.getElementById("toSelect").value);
       syncSelectDisplays();
-      currentOffset = 0;
-      baseTs = Date.now();
-      renderWindowSelect();
       if (activeTab === "pinned") switchTab("solutions");
       loadTrains();
     }
@@ -944,7 +961,7 @@
       }
 
       try {
-        const qs = new URLSearchParams({ from, to, offset: currentOffset, t0: baseTs });
+        const qs = new URLSearchParams({ from, to, slot: currentSlot });
         const res = await fetch(`/api/treni?${qs}`);
         const text = await res.text();
         let data;
@@ -994,7 +1011,7 @@
     function renderDirectList(trains) {
       const content = document.getElementById("contentArea");
       if (!trains.length) {
-        content.innerHTML = `<div class="upcoming-card">Nessun treno previsto in questa fascia oraria (tra le 00:30 e le 05:00 il servizio regionale è sospeso).</div>`;
+        content.innerHTML = `<div class="upcoming-card">Nessun treno trovato nella fascia <strong>${windowLabel(currentSlot)}</strong>.</div>`;
         return;
       }
 
@@ -1037,7 +1054,7 @@
     function renderConnectionsList(connections) {
       const content = document.getElementById("contentArea");
       if (!connections.length) {
-        content.innerHTML = `<div class="upcoming-card">Nessuna soluzione prevista in questa fascia oraria (tra le 00:30 e le 05:00 il servizio regionale è sospeso).</div>`;
+        content.innerHTML = `<div class="upcoming-card">Nessuna soluzione trovata nella fascia <strong>${windowLabel(currentSlot)}</strong>.</div>`;
         return;
       }
 

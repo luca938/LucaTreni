@@ -1,5 +1,6 @@
 const VT_BASE = "http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno";
 const DAY_MS = 24 * 3600000;
+const H_MS = 3600000;
 
 function vtDate(d) {
   const fmt = new Intl.DateTimeFormat("en-US", {
@@ -25,7 +26,9 @@ function romeMidnight(d) {
 }
 
 function pretty(name) {
-  return String(name || "").toLowerCase().replace(/(^|[\s'.-])([a-zà-ù])/g, (m, a, b) => a + b.toUpperCase());
+  return String(name || "")
+    .toLowerCase()
+    .replace(/(^|[\s'.\-/])([a-zà-ù])/g, (m, a, b) => a + b.toUpperCase());
 }
 
 const EXCLUDED_CATS = new Set(["FR", "FA", "FB", "ITA"]);
@@ -52,7 +55,10 @@ function matchStation(stopId, targetId) {
 
 async function fetchText(url) {
   try {
-    const res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Linux; Android 14)" }, signal: AbortSignal.timeout(5000) });
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (Linux; Android 14)" },
+      signal: AbortSignal.timeout(6500)
+    });
     if (!res.ok) return null;
     return await res.text();
   } catch {
@@ -64,7 +70,7 @@ async function fetchJson(url) {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (Linux; Android 14)" },
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(6500)
     });
     if (!res.ok) return null;
     const text = await res.text();
@@ -85,8 +91,8 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
   const stopA = andamento.fermate[idxA];
   const stopB = andamento.fermate[idxB];
 
-  const rawDepSched = stopA.partenza_teorica || stopA.programmata;
-  const rawArrSched = stopB.arrivo_teorico || stopB.programmata;
+  const rawDepSched = stopA.partenza_teorica || stopA.programmata || summary?._rawBoardTime;
+  const rawArrSched = stopB.arrivo_teorico || stopB.programmata || stopB.partenza_teorica;
   if (!rawDepSched || !rawArrSched) return null;
 
   let durMs = rawArrSched - rawDepSched;
@@ -101,7 +107,7 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
   if (depSched >= refEnd) return null;
   const arrSched = depSched + durMs;
 
-  // Se il treno nel tabellone di oggi è già passato/completato ma cade in una finestra futura (dopo mezzanotte / domani), è una corsa futura
+  // Se il treno cade in una giornata successiva rispetto al dato caricato o in un orario futuro ma risulta già effettuato nel tabellone odierno
   const isFutureDay = dayShift > 0 || (depSched > nowMs + 1800000 && stopA.actualFermataType === 1);
   if (!isFutureDay && (stopA.actualFermataType === 3 || stopB.actualFermataType === 3)) return null;
 
@@ -139,7 +145,7 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
       : null;
     return {
       id: f.id,
-      stazione: f.stazione,
+      stazione: STATION_NAMES[f.id] || pretty(f.stazione),
       programmata: prog,
       effettiva: eff,
       ritardo: isFutureDay ? 0 : (f.ritardoPartenza ?? f.ritardoArrivo ?? 0),
@@ -154,8 +160,8 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
     isFutureDay,
     dayShift,
     categoria: andamento.compTipologiaTreno || summary?.categoriaDescrizione || summary?.categoria || "REG",
-    origine: andamento.origine,
-    destinazione: andamento.destinazione,
+    origine: pretty(andamento.origine || summary?.origine),
+    destinazione: pretty(andamento.destinazione || summary?.destinazione),
     fromId: stationA,
     fromName: STATION_NAMES[stationA] || pretty(stopA.stazione),
     toId: stationB,
@@ -167,7 +173,7 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
     ritardo,
     binarioPartenza: binPartenza,
     binarioArrivo: binArrivo,
-    ultimoRilevamentoStazione: isFutureDay ? "--" : (andamento.stazioneUltimoRilevamento || "--"),
+    ultimoRilevamentoStazione: isFutureDay ? "--" : (pretty(andamento.stazioneUltimoRilevamento) || "--"),
     ultimoRilevamentoOra: isFutureDay ? null : (andamento.oraUltimoRilevamento || null),
     arrivatoADestinazione: isFutureDay ? false : stopB.actualFermataType === 1,
     loadedLive: true,
@@ -175,9 +181,9 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
   };
 }
 
-const WINDOW_H = 5;
-const MAX_FROM_TRAINS = 45;
-const MAX_TO_TRAINS = 60;
+const WINDOW_H = 6;
+const MAX_FROM_TRAINS = 55;
+const MAX_TO_TRAINS = 65;
 
 async function mainHandler(q) {
   const { from, to } = q || {};
@@ -191,17 +197,18 @@ async function mainHandler(q) {
     const todayMid = romeMidnight(now);
     const MIN_WAIT = 4;
     const MAX_WAIT = 75;
-    const H = 3600000;
 
-    const offset = Math.min(Math.max(parseInt(q.offset, 10) || 0, 0), 6);
-    let t0 = Number(q.t0);
-    if (!isFinite(t0) || Math.abs(t0 - nowMs) > 24 * H) t0 = nowMs;
-    const winStart = t0 + offset * WINDOW_H * H;
-    const winEnd = winStart + WINDOW_H * H;
-    const lowBound = offset === 0 ? nowMs - 60000 : winStart;
-    const slotStart = offset === 0 ? nowMs : winStart;
+    // Fasce orarie fisse da 6 ore a partire dalla mezzanotte di oggi:
+    // slot 0: 00-06, slot 1: 06-12, slot 2: 12-18, slot 3: 18-24, slot 4..7: domani
+    const defaultSlot = Math.min(3, Math.max(0, Math.floor((nowMs - todayMid) / (WINDOW_H * H_MS))));
+    const rawSlot = q.slot !== undefined ? parseInt(q.slot, 10) : (q.offset !== undefined ? parseInt(q.offset, 10) : defaultSlot);
+    const slot = Math.min(Math.max(isNaN(rawSlot) ? defaultSlot : rawSlot, 0), 7);
 
-    // Riporta qualsiasi timestamp futuro alla giornata odierna [todayMid, todayMid + 24h) per interrogare il tabellone di ViaggiaTreno
+    const winStart = todayMid + slot * WINDOW_H * H_MS;
+    const winEnd = winStart + WINDOW_H * H_MS;
+    const lowBound = winStart;
+
+    // Riporta qualsiasi timestamp alla giornata odierna [todayMid, todayMid + 24h) per interrogare il tabellone di ViaggiaTreno
     function toTodayQueryStr(targetMs) {
       let qMs = targetMs;
       while (qMs >= todayMid + DAY_MS) qMs -= DAY_MS;
@@ -211,7 +218,7 @@ async function mainHandler(q) {
 
     const andamentoCache = new Map();
 
-    // Carica andamentoTreno usando direttamente todayMid (evitando che cercaNumeroTrenoTrenoAutocomplete restituisca domani mattina con andamento null)
+    // Carica andamentoTreno usando prima dataPartenzaTreno fornita dal tabellone di ViaggiaTreno o autocomplete
     function loadTrain(t) {
       const num = t.numeroTreno;
       const codInit = t.codOrigine || "";
@@ -220,33 +227,46 @@ async function mainHandler(q) {
 
       const p = (async () => {
         let cod = t.codOrigine;
-        let dep = todayMid;
+        let boardDep = t.dataPartenzaTreno ? Number(t.dataPartenzaTreno) : null;
+        let autoDep = null;
 
-        if (!cod) {
+        if (!cod || !boardDep) {
           const txt = await fetchText(`${VT_BASE}/cercaNumeroTrenoTrenoAutocomplete/${num}`);
-          const line = (txt || "").trim().split("\n")[0] || "";
-          const parts = (line.split("|")[1] || "").trim().split("-");
-          if (parts.length >= 3) {
-            cod = parts[1];
-            dep = parts[2] || todayMid;
+          const lines = (txt || "").trim().split("\n").filter(Boolean);
+          for (const line of lines) {
+            const parts = (line.split("|")[1] || "").trim().split("-");
+            if (parts.length >= 2) {
+              if (!cod) cod = parts[1];
+              if (parts[2] && !autoDep) autoDep = Number(parts[2]);
+              break;
+            }
           }
         }
         if (!cod) return { summary: t, andamento: null };
 
-        // 1. Prova prima con la mezzanotte di oggi (dove ViaggiaTreno conserva tutte le corse della giornata)
-        let and = await fetchJson(`${VT_BASE}/andamentoTreno/${cod}/${num}/${todayMid}`);
+        // Candidati di mezzanotte da provare in ordine di priorità (senza duplicati)
+        const candidates = [];
+        const addCand = (ms) => {
+          if (ms && isFinite(ms) && !candidates.includes(ms)) candidates.push(ms);
+        };
+        addCand(boardDep);
+        addCand(autoDep);
+        addCand(todayMid);
+        addCand(todayMid - DAY_MS);
+        addCand(todayMid + DAY_MS);
 
-        // 2. Se non trovato (es. treno notturno partito prima di mezzanotte o già ruotato a domani), prova ieri o domani
-        if (!and || !Array.isArray(and.fermate)) {
-          and = await fetchJson(`${VT_BASE}/andamentoTreno/${cod}/${num}/${todayMid - DAY_MS}`);
-          if (and && Array.isArray(and.fermate)) dep = todayMid - DAY_MS;
-        }
-        if (!and || !Array.isArray(and.fermate)) {
-          and = await fetchJson(`${VT_BASE}/andamentoTreno/${cod}/${num}/${todayMid + DAY_MS}`);
-          if (and && Array.isArray(and.fermate)) dep = todayMid + DAY_MS;
+        let and = null;
+        let usedDep = todayMid;
+        for (const cand of candidates) {
+          const res = await fetchJson(`${VT_BASE}/andamentoTreno/${cod}/${num}/${cand}`);
+          if (res && Array.isArray(res.fermate) && res.fermate.length > 0) {
+            and = res;
+            usedDep = cand;
+            break;
+          }
         }
 
-        return { summary: { ...t, codOrigine: cod, dataPartenzaTreno: dep }, andamento: and };
+        return { summary: { ...t, codOrigine: cod, dataPartenzaTreno: usedDep }, andamento: and };
       })();
 
       andamentoCache.set(cacheKey, p);
@@ -264,43 +284,51 @@ async function mainHandler(q) {
         for (const t of list) {
           if (EXCLUDED_CATS.has(t.categoria)) continue;
           const key = `${t.codOrigine || ""}-${t.numeroTreno}`;
+          const rawBoard = (kind === "arrivi" ? t.orarioArrivo || t.orarioPartenza : t.orarioPartenza) || 0;
           if (!unique.has(key)) {
-            let rawTime = (kind === "arrivi" ? t.orarioArrivo || t.orarioPartenza : t.orarioPartenza) || 0;
-            if (rawTime > 0) {
-              while (rawTime < refStart - 60 * 60000) rawTime += DAY_MS;
-              while (rawTime >= refEnd + 240 * 60000) rawTime -= DAY_MS;
+            let alignedTime = rawBoard;
+            if (alignedTime > 0) {
+              let shift = Math.floor((refStart - 30 * 60000 - alignedTime) / DAY_MS);
+              while (alignedTime + shift * DAY_MS < refStart - 30 * 60000) shift++;
+              alignedTime = alignedTime + shift * DAY_MS;
             }
-            unique.set(key, { ...t, _sortTime: rawTime });
+            unique.set(key, { ...t, _rawBoardTime: rawBoard, _sortTime: alignedTime });
           }
         }
       }
       return Array.from(unique.values())
-        .filter((t) => !t._sortTime || (t._sortTime >= refStart - 60 * 60000 && t._sortTime < refEnd))
+        .filter((t) => !t._sortTime || (t._sortTime >= refStart - 30 * 60000 && t._sortTime < refEnd + 30 * 60000))
         .sort((a, b) => a._sortTime - b._sortTime);
     }
 
+    // Campionamento ogni 60 minuti lungo tutta la fascia di 6 ore
     const depSlots = [];
-    for (let t = slotStart; t <= winEnd; t += 45 * 60000) depSlots.push(toTodayQueryStr(t));
+    for (let t = winStart; t < winEnd; t += 60 * 60000) depSlots.push(toTodayQueryStr(t));
     const arrSlots = [];
-    for (let t = slotStart + 30 * 60000; t <= winEnd + 210 * 60000; t += 45 * 60000) arrSlots.push(toTodayQueryStr(t));
+    for (let t = winStart + 30 * 60000; t <= winEnd + 180 * 60000; t += 60 * 60000) arrSlots.push(toTodayQueryStr(t));
 
     const [fromList, toList] = await Promise.all([
       getBoardList(from, depSlots, "partenze", lowBound, winEnd),
-      getBoardList(to, arrSlots, "arrivi", lowBound, winEnd + 210 * 60000)
+      getBoardList(to, arrSlots, "arrivi", lowBound, winEnd + 180 * 60000)
     ]);
 
     const toNums = new Set(toList.map((t) => String(t.numeroTreno)));
-    let directCand = fromList.filter((t) => toNums.has(String(t.numeroTreno)));
-    if (directCand.length === 0) directCand = fromList;
-    directCand = directCand.slice(0, MAX_FROM_TRAINS);
+    const directMatches = fromList.filter((t) => toNums.has(String(t.numeroTreno)));
 
-    const directRaw = await Promise.all(directCand.map(loadTrain));
-    const directTrains = directRaw
+    // Se ci sono match diretti nei tabelloni partenza/arrivo li controlliamo per primi, ma aggiungiamo anche gli altri di fromList per sicurezza
+    const orderedFrom = [
+      ...directMatches,
+      ...fromList.filter((t) => !toNums.has(String(t.numeroTreno)))
+    ].slice(0, MAX_FROM_TRAINS);
+
+    const fromRaw = await Promise.all(orderedFrom.map(loadTrain));
+
+    const directTrains = fromRaw
       .map(({ summary, andamento }) => extractLeg(andamento, summary, from, to, lowBound, winEnd, nowMs))
       .filter(Boolean)
       .sort((a, b) => a.orarioPartenza - b.orarioPartenza);
 
-    const windowInfo = { start: winStart, end: winEnd, offset };
+    const windowInfo = { start: winStart, end: winEnd, slot };
 
     if (directTrains.length > 0) {
       return {
@@ -310,10 +338,7 @@ async function mainHandler(q) {
       };
     }
 
-    const [fromRaw, toRaw] = await Promise.all([
-      Promise.all(fromList.slice(0, MAX_FROM_TRAINS).map(loadTrain)),
-      Promise.all(toList.slice(0, MAX_TO_TRAINS).map(loadTrain))
-    ]);
+    const toRaw = await Promise.all(toList.slice(0, MAX_TO_TRAINS).map(loadTrain));
 
     const fromOk = fromRaw.filter((x) => x.andamento && Array.isArray(x.andamento.fermate));
     const toOk = toRaw.filter((x) => x.andamento && Array.isArray(x.andamento.fermate));
@@ -339,7 +364,6 @@ async function mainHandler(q) {
           const l1 = extractLeg(A.andamento, A.summary, from, hubId, lowBound, winEnd, nowMs);
           if (!l1) continue;
 
-          // Allinea la seconda tratta direttamente alla finestra di interscambio [l1.orarioArrivo, l1.orarioArrivo + MAX_WAIT]
           const l2 = extractLeg(
             B.andamento,
             B.summary,
@@ -393,7 +417,7 @@ async function mainHandler(q) {
     }
     const finalConnections = pareto
       .sort((a, b) => a.leg1.orarioPartenza - b.leg1.orarioPartenza)
-      .slice(0, 14);
+      .slice(0, 18);
 
     for (const c of finalConnections) {
       const hubId = c.leg2.fromId;
