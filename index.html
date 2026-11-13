@@ -13,6 +13,7 @@
       --card: #121c16;
       --card-border: rgba(196, 164, 104, 0.18);
       --gold: #c99a49;
+      --gold-soft: rgba(201, 154, 73, 0.16);
       --green-pill: #1b3124;
       --green-border: #38634a;
       --green-dot: #48bb78;
@@ -25,21 +26,6 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-    /* Nasconde badge iniettati da host esterni */
-    a[href*="netlify.com"],
-    a[href*="netlify.app"][target="_blank"],
-    iframe[src*="netlify"],
-    [class*="netlify-badge"],
-    [id*="netlify-badge"],
-    [data-netlify-badge] {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-      width: 0 !important;
-      height: 0 !important;
-    }
 
     body {
       background-color: var(--bg);
@@ -193,7 +179,7 @@
       transform: scale(0.9);
     }
 
-    /* Tabs Soluzioni / Treno Pinnato */
+    /* Tabs Soluzioni / Tratta Salvata */
     .tabs {
       background: var(--card);
       border: 1px solid rgba(255,255,255,0.08);
@@ -215,20 +201,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 7px;
     }
     .tab-btn.active {
       background: var(--green-pill);
       border-color: var(--green-border);
       color: var(--text);
     }
-    .pin-count {
+    .pin-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
       background: var(--gold);
-      color: #0a120e;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 99px;
+      display: inline-block;
     }
 
     .status-bar {
@@ -253,7 +238,7 @@
       box-shadow: 0 0 0 4px rgba(201, 154, 73, 0.25);
     }
 
-    /* Card Grande (nella schermata Pinnato) */
+    /* Card Grande (nella schermata Tratta Salvata) */
     .hero-card {
       background: linear-gradient(165deg, #1b2419 0%, #111a14 100%);
       border: 1px solid var(--card-border);
@@ -432,32 +417,48 @@
       line-height: 1;
     }
 
-    /* Pulsante Pin */
+    /* Pulsante Salva Tratta minimal in linea con la palette */
     .pin-btn {
       width: 36px;
       height: 36px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       color: var(--muted);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       flex-shrink: 0;
-      font-size: 15px;
-      transition: all 0.15s ease;
+      transition: all 0.18s ease;
+    }
+    .pin-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: fill 0.18s ease, transform 0.18s ease;
+    }
+    .pin-btn:hover {
+      border-color: rgba(201, 154, 73, 0.45);
+      color: var(--gold);
     }
     .pin-btn.active {
-      background: rgba(201, 154, 73, 0.2);
+      background: var(--gold-soft);
       border-color: var(--gold);
       color: var(--gold);
+    }
+    .pin-btn.active svg {
+      fill: currentColor;
     }
     .pin-btn:active {
       transform: scale(0.9);
     }
 
-    /* Orari grandi bilanciati nella card Pinnato */
+    /* Orari grandi bilanciati nella card Tratta Salvata */
     .time-pair {
       display: flex;
       align-items: center;
@@ -549,7 +550,7 @@
       Soluzioni
     </button>
     <button class="tab-btn" id="tabPinned" onclick="switchTab('pinned')">
-      Treno Pinnato <span id="pinBadge" class="pin-count" style="display:none;">1</span>
+      Tratta Salvata <span id="pinBadge" class="pin-dot" style="display:none;"></span>
     </button>
   </div>
 
@@ -577,10 +578,12 @@
 
     const STATION_BY_ID = Object.fromEntries(STATIONS.map(s => [s.id, s]));
 
-    let activeTab = "solutions"; // "solutions" | "pinned"
+    const BOOKMARK_SVG = `<svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
+
+    let activeTab = "solutions";
     let currentOffset = 0;
     let baseTs = Date.now();
-    const WINDOWS = 5;
+    const WINDOWS = 6;
     const WINDOW_MS = 5 * 3600000;
     let currentViewData = null;
     let expandedStops = { leg1: false, leg2: false };
@@ -741,7 +744,7 @@
     }
 
     async function fetchLiveAndamentoForLeg(leg) {
-      if (leg.isFutureDay) return null;
+      if (leg.isFutureDay && leg.orarioPartenza > Date.now() + 2 * 3600000) return null;
       const numStr = String(leg.numeroTreno).trim();
       let cod = leg.codOrigine;
       let depTs = leg.dataPartenzaTreno;
@@ -764,7 +767,8 @@
     }
 
     function applyLiveToLeg(leg, and) {
-      if (!and || !Array.isArray(and.fermate) || leg.isFutureDay) return leg;
+      if (!and || !Array.isArray(and.fermate)) return leg;
+      if (leg.isFutureDay && leg.orarioPartenza > Date.now() + 2 * 3600000) return leg;
 
       const idxA = findStopIdx(and.fermate, leg.fromId, leg.fromName);
       const idxB = findStopIdx(and.fermate, leg.toId, leg.toName);
@@ -819,7 +823,7 @@
       const pinned = getPinned();
       if (!pinned) return;
 
-      setLoadingState(true, "Aggiornamento treno pinnato live...");
+      setLoadingState(true, "Aggiornamento tratta salvata...");
       try {
         if (pinned.kind === "direct") {
           const and = await fetchLiveAndamentoForLeg(pinned.data);
@@ -936,7 +940,7 @@
       setLoadingState(true, "Ricerca soluzioni su ViaggiaTreno...");
       const content = document.getElementById("contentArea");
       if (activeTab === "solutions") {
-        content.innerHTML = `<div class="upcoming-card">Ricerca treni su ViaggiaTreno...</div>`;
+        content.innerHTML = `<div class="upcoming-card">Ricerca soluzioni in corso...</div>`;
       }
 
       try {
@@ -986,18 +990,18 @@
       }
     }
 
-    // SCHERMATA 1: Tutte le soluzioni in formato compatto con orari di uguale importanza
+    // SCHERMATA 1: Tutte le soluzioni in formato compatto con icona minimal
     function renderDirectList(trains) {
       const content = document.getElementById("contentArea");
       if (!trains.length) {
-        content.innerHTML = `<div class="upcoming-card">Nessun treno trovato in questa fascia oraria.</div>`;
+        content.innerHTML = `<div class="upcoming-card">Nessun treno previsto in questa fascia oraria (tra le 00:30 e le 05:00 il servizio regionale è sospeso).</div>`;
         return;
       }
 
       const pinned = getPinned();
 
       content.innerHTML = `
-        <div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni dirette (${trains.length}) · Tocca 📌 per seguire il treno</div>
+        <div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni dirette (${trains.length})</div>
         ${trains.map((t, idx) => {
           const isPinned = pinned && pinned.key === getItemKey(t, "direct");
           return `
@@ -1019,8 +1023,8 @@
                     <span style="color:var(--muted);font-size:11px;display:block;">BIN.</span>
                     <strong style="font-family:'DM Serif Display',serif;font-size:22px;">${t.binarioPartenza}</strong>
                   </div>
-                  <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx})" title="Pinna questo treno">
-                    📌
+                  <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx})" title="Salva tratta">
+                    ${BOOKMARK_SVG}
                   </button>
                 </div>
               </div>
@@ -1033,14 +1037,14 @@
     function renderConnectionsList(connections) {
       const content = document.getElementById("contentArea");
       if (!connections.length) {
-        content.innerHTML = `<div class="upcoming-card">Nessuna soluzione trovata in questa fascia oraria.</div>`;
+        content.innerHTML = `<div class="upcoming-card">Nessuna soluzione prevista in questa fascia oraria (tra le 00:30 e le 05:00 il servizio regionale è sospeso).</div>`;
         return;
       }
 
       const pinned = getPinned();
 
       content.innerHTML = `
-        <div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni con cambio (${connections.length}) · Tocca 📌 per seguire</div>
+        <div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni con cambio (${connections.length})</div>
         ${connections.map((c, idx) => {
           const isPinned = pinned && pinned.key === getItemKey(c, "connections");
           const totDelay = Math.max(0, Math.round((c.leg2.orarioArrivoStimato - c.leg2.orarioArrivo) / 60000));
@@ -1062,8 +1066,8 @@
                     Cambio a ${abbrStation(c.hubArrivalName)} (${c.waitRealMin} min · bin. ${c.leg1.binarioArrivo} → ${c.leg2.binarioPartenza})
                   </div>
                 </div>
-                <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx})" title="Pinna questa soluzione">
-                  📌
+                <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx})" title="Salva tratta">
+                  ${BOOKMARK_SVG}
                 </button>
               </div>
             </div>
@@ -1072,18 +1076,22 @@
       `;
     }
 
-    // SCHERMATA 2: Dettaglio Treno Pinnato (senza box "Posizione treno", con orari pari e Bin. 1° e Bin. 2° grandi)
+    // SCHERMATA 2: Dettaglio Tratta Salvata
     function renderPinnedTab() {
       const content = document.getElementById("contentArea");
       const pinned = getPinned();
 
       if (!pinned || !pinned.data) {
         content.innerHTML = `
-          <div class="upcoming-card" style="text-align:center;padding:28px 18px;">
-            <div style="font-size:26px;margin-bottom:8px;">📌</div>
-            <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Nessun treno pinnato</div>
-            <div style="font-size:13px;color:var(--muted);">
-              Tocca l'icona 📌 accanto a un treno nella scheda <strong>Soluzioni</strong> per fissarlo qui e seguirlo anche dopo la partenza.
+          <div class="upcoming-card" style="text-align:center;padding:30px 20px;">
+            <div style="color:var(--gold);margin-bottom:10px;display:flex;justify-content:center;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </div>
+            <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Nessuna tratta salvata</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.45;">
+              Seleziona l'icona di salvataggio accanto a una soluzione nella scheda <strong>Soluzioni</strong> per monitorarne l'andamento e le fermate in tempo reale.
             </div>
           </div>
         `;
@@ -1100,7 +1108,7 @@
           <div class="hero-card">
             <div class="hero-top">
               <div>
-                <div class="section-tag" style="color:var(--gold);">📌 Treno Pinnato · ${abbrStation(next.fromName)} ➔ ${abbrStation(next.toName)}</div>
+                <div class="section-tag" style="color:var(--gold);">Tratta Salvata · ${abbrStation(next.fromName)} ➔ ${abbrStation(next.toName)}</div>
                 <div class="time-pair">
                   <div><span class="tp-label">Parte</span><span class="tp-dep">${fmtTime(next.orarioPartenza)}</span></div>
                   <span class="tp-arrow">→</span>
@@ -1113,7 +1121,7 @@
                 </div>
               </div>
               <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-                <button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi pin">📌</button>
+                <button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi tratta salvata">${BOOKMARK_SVG}</button>
                 <div class="platform-box">
                   <span>BINARIO</span>
                   <strong>${next.binarioPartenza}</strong>
@@ -1150,7 +1158,7 @@
         return;
       }
 
-      // Pinned Connection (2 tratte) con BIN. 1° e BIN. 2° grandi e senza box "Posizione treno"
+      // Tratta Salvata con cambio (2 tratte)
       const next = pinned.data;
       const l1 = next.leg1, l2 = next.leg2;
       const totDelay = Math.max(0, Math.round((l2.orarioArrivoStimato - l2.orarioArrivo) / 60000));
@@ -1163,7 +1171,7 @@
         <div class="hero-card">
           <div class="hero-top">
             <div>
-              <div class="section-tag" style="color:var(--gold);">📌 Viaggio Pinnato</div>
+              <div class="section-tag" style="color:var(--gold);">Tratta Salvata · ${abbrStation(l1.fromName)} ➔ ${abbrStation(l2.toName)}</div>
               <div class="time-pair">
                 <div><span class="tp-label">Parte</span><span class="tp-dep">${fmtTime(l1.orarioPartenza)}</span></div>
                 <span class="tp-arrow">→</span>
@@ -1171,7 +1179,7 @@
               </div>
               <div class="dur-line">${durationLine(l1.orarioPartenza, l2.orarioArrivo, totDelay)}</div>
             </div>
-            <button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi pin">📌</button>
+            <button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi tratta salvata">${BOOKMARK_SVG}</button>
           </div>
 
           <!-- 1ª TRATTA con BIN. 1° grande -->
