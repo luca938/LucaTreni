@@ -616,7 +616,6 @@
       );
       if (match) return match.short;
 
-      // Converte prima in Title Case (es. PAVIA -> Pavia, VOGHERA -> Voghera)
       const titled = toTitleCase(raw);
 
       return titled
@@ -961,7 +960,8 @@
       }
 
       try {
-        const qs = new URLSearchParams({ from, to, slot: currentSlot });
+        // Passiamo sia slot che offset=slot per compatibilità totale
+        const qs = new URLSearchParams({ from, to, slot: currentSlot, offset: currentSlot });
         const res = await fetch(`/api/treni?${qs}`);
         const text = await res.text();
         let data;

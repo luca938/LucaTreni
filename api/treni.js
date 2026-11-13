@@ -80,7 +80,7 @@ async function fetchJson(url) {
   }
 }
 
-// Estrae i dati di una tratta riallineando automaticamente il giorno rispetto alla finestra richiesta [refStart, refEnd]
+// Estrae i dati di una tratta riallineando l'orario programmato alla finestra richiesta [refStart, refEnd]
 function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, nowMs) {
   if (!andamento || !Array.isArray(andamento.fermate)) return null;
 
@@ -98,7 +98,7 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
   let durMs = rawArrSched - rawDepSched;
   if (durMs < 0) durMs += DAY_MS;
 
-  // Calcola di quanti giorni traslare l'orario programmato per cadere in [refStart, refEnd]
+  // Calcola di quanti giorni interi traslare l'orario programmato per cadere dentro [refStart, refEnd)
   let dayShift = Math.floor((refStart - rawDepSched) / DAY_MS);
   while (rawDepSched + dayShift * DAY_MS < refStart) dayShift++;
   const shiftMs = dayShift * DAY_MS;
@@ -107,30 +107,31 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
   if (depSched >= refEnd) return null;
   const arrSched = depSched + durMs;
 
-  // Se il treno cade in una giornata successiva rispetto al dato caricato o in un orario futuro ma risulta già effettuato nel tabellone odierno
-  const isFutureDay = dayShift > 0 || (depSched > nowMs + 1800000 && stopA.actualFermataType === 1);
+  // Se la corsa proiettata è nel futuro rispetto ad ora (o traslata di giorno), è una corsa futura
+  const isFutureDay = dayShift !== 0 || depSched > nowMs + 1800000;
   if (!isFutureDay && (stopA.actualFermataType === 3 || stopB.actualFermataType === 3)) return null;
 
-  const ritardo = isFutureDay ? 0 : (andamento.ritardo ?? summary?.ritardo ?? 0);
+  const isLiveRun = !isFutureDay && Math.abs(depSched - nowMs) < 6 * H_MS;
+  const ritardo = isLiveRun ? (andamento.ritardo ?? summary?.ritardo ?? 0) : 0;
 
-  const depReal = isFutureDay
-    ? depSched
-    : (stopA.partenzaReale ? stopA.partenzaReale + shiftMs : depSched + Math.max(0, ritardo) * 60000);
+  const depReal = isLiveRun
+    ? (stopA.partenzaReale ? stopA.partenzaReale + shiftMs : depSched + Math.max(0, ritardo) * 60000)
+    : depSched;
 
-  const arrReal = isFutureDay
-    ? arrSched
-    : (stopB.arrivoReale ? stopB.arrivoReale + shiftMs : arrSched + Math.max(0, ritardo) * 60000);
+  const arrReal = isLiveRun
+    ? (stopB.arrivoReale ? stopB.arrivoReale + shiftMs : arrSched + Math.max(0, ritardo) * 60000)
+    : arrSched;
 
   const binPartenza =
-    (!isFutureDay && stopA.binarioEffettivoPartenzaDescrizione) ||
+    (isLiveRun && stopA.binarioEffettivoPartenzaDescrizione) ||
     stopA.binarioProgrammatoPartenzaDescrizione ||
-    (!isFutureDay && summary?.binarioEffettivoPartenzaDescrizione) ||
+    (isLiveRun && summary?.binarioEffettivoPartenzaDescrizione) ||
     summary?.binarioProgrammatoPartenzaDescrizione ||
     stopA.binarioEffettivoPartenzaDescrizione ||
     "-";
 
   const binArrivo =
-    (!isFutureDay && stopB.binarioEffettivoArrivoDescrizione) ||
+    (isLiveRun && stopB.binarioEffettivoArrivoDescrizione) ||
     stopB.binarioProgrammatoArrivoDescrizione ||
     stopB.binarioEffettivoArrivoDescrizione ||
     "-";
@@ -140,7 +141,7 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
     let stopDur = rawProg - rawDepSched;
     if (stopDur < -3600000) stopDur += DAY_MS;
     const prog = depSched + stopDur;
-    const eff = !isFutureDay && (f.partenzaReale || f.arrivoReale)
+    const eff = isLiveRun && (f.partenzaReale || f.arrivoReale)
       ? (f.partenzaReale || f.arrivoReale) + shiftMs
       : null;
     return {
@@ -148,8 +149,8 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
       stazione: STATION_NAMES[f.id] || pretty(f.stazione),
       programmata: prog,
       effettiva: eff,
-      ritardo: isFutureDay ? 0 : (f.ritardoPartenza ?? f.ritardoArrivo ?? 0),
-      effettuata: isFutureDay ? false : f.actualFermataType === 1
+      ritardo: isLiveRun ? (f.ritardoPartenza ?? f.ritardoArrivo ?? 0) : 0,
+      effettuata: isLiveRun ? f.actualFermataType === 1 : (depSched < nowMs)
     };
   });
 
@@ -173,17 +174,17 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
     ritardo,
     binarioPartenza: binPartenza,
     binarioArrivo: binArrivo,
-    ultimoRilevamentoStazione: isFutureDay ? "--" : (pretty(andamento.stazioneUltimoRilevamento) || "--"),
-    ultimoRilevamentoOra: isFutureDay ? null : (andamento.oraUltimoRilevamento || null),
-    arrivatoADestinazione: isFutureDay ? false : stopB.actualFermataType === 1,
+    ultimoRilevamentoStazione: isLiveRun ? (pretty(andamento.stazioneUltimoRilevamento) || "--") : "--",
+    ultimoRilevamentoOra: isLiveRun ? (andamento.oraUltimoRilevamento || null) : null,
+    arrivatoADestinazione: isLiveRun ? stopB.actualFermataType === 1 : false,
     loadedLive: true,
     fermate: stopsSlice
   };
 }
 
 const WINDOW_H = 6;
-const MAX_FROM_TRAINS = 55;
-const MAX_TO_TRAINS = 65;
+const MAX_FROM_TRAINS = 60;
+const MAX_TO_TRAINS = 70;
 
 async function mainHandler(q) {
   const { from, to } = q || {};
@@ -208,17 +209,27 @@ async function mainHandler(q) {
     const winEnd = winStart + WINDOW_H * H_MS;
     const lowBound = winStart;
 
-    // Riporta qualsiasi timestamp alla giornata odierna [todayMid, todayMid + 24h) per interrogare il tabellone di ViaggiaTreno
-    function toTodayQueryStr(targetMs) {
-      let qMs = targetMs;
-      while (qMs >= todayMid + DAY_MS) qMs -= DAY_MS;
-      while (qMs < todayMid) qMs += DAY_MS;
-      return vtDate(new Date(qMs));
+    // FIX FONDAMENTALE PER VIAGGIATRENO:
+    // L'endpoint /partenze e /arrivi di ViaggiaTreno accetta solo orari FUTURI (o >= ora attuale - 30 min).
+    // Se alle 18:45 gli chiediamo "Oggi alle 08:00" (perché riportavamo tutto a todayMid), ViaggiaTreno restituisce [] (array vuoto)
+    // in quanto le 08:00 di oggi sono già nel passato!
+    // Invece, se l'orario nella giornata odierna è già passato (< nowMs - 20 min), chiediamo lo stesso identico orario su DOMANI (+24h),
+    // dove ViaggiaTreno espone l'intero tabellone programmato di quella fascia oraria!
+    function toBoardQueryStrings(targetMs) {
+      let baseToday = targetMs;
+      while (baseToday >= todayMid + DAY_MS) baseToday -= DAY_MS;
+      while (baseToday < todayMid) baseToday += DAY_MS;
+
+      const nextDay = baseToday + DAY_MS;
+
+      if (baseToday < nowMs - 20 * 60000) {
+        return [vtDate(new Date(nextDay)), vtDate(new Date(baseToday))];
+      }
+      return [vtDate(new Date(baseToday)), vtDate(new Date(nextDay))];
     }
 
     const andamentoCache = new Map();
 
-    // Carica andamentoTreno usando prima dataPartenzaTreno fornita dal tabellone di ViaggiaTreno o autocomplete
     function loadTrain(t) {
       const num = t.numeroTreno;
       const codInit = t.codOrigine || "";
@@ -244,14 +255,14 @@ async function mainHandler(q) {
         }
         if (!cod) return { summary: t, andamento: null };
 
-        // Candidati di mezzanotte da provare in ordine di priorità (senza duplicati)
+        // Priorità: todayMid (dove ViaggiaTreno conserva le fermate complete di tutte le corse della giornata), poi boardDep/autoDep/ieri/domani
         const candidates = [];
         const addCand = (ms) => {
           if (ms && isFinite(ms) && !candidates.includes(ms)) candidates.push(ms);
         };
+        addCand(todayMid);
         addCand(boardDep);
         addCand(autoDep);
-        addCand(todayMid);
         addCand(todayMid - DAY_MS);
         addCand(todayMid + DAY_MS);
 
@@ -301,11 +312,15 @@ async function mainHandler(q) {
         .sort((a, b) => a._sortTime - b._sortTime);
     }
 
-    // Campionamento ogni 60 minuti lungo tutta la fascia di 6 ore
+    // Campionamento a partire da winStart - 30min per non perdere i treni tra l'inizio della fascia (es. 18:00) e 18:30!
     const depSlots = [];
-    for (let t = winStart; t < winEnd; t += 60 * 60000) depSlots.push(toTodayQueryStr(t));
+    for (let t = winStart - 30 * 60000; t < winEnd; t += 60 * 60000) {
+      for (const s of toBoardQueryStrings(t)) depSlots.push(s);
+    }
     const arrSlots = [];
-    for (let t = winStart + 30 * 60000; t <= winEnd + 180 * 60000; t += 60 * 60000) arrSlots.push(toTodayQueryStr(t));
+    for (let t = winStart; t <= winEnd + 180 * 60000; t += 60 * 60000) {
+      for (const s of toBoardQueryStrings(t)) arrSlots.push(s);
+    }
 
     const [fromList, toList] = await Promise.all([
       getBoardList(from, depSlots, "partenze", lowBound, winEnd),
@@ -315,7 +330,6 @@ async function mainHandler(q) {
     const toNums = new Set(toList.map((t) => String(t.numeroTreno)));
     const directMatches = fromList.filter((t) => toNums.has(String(t.numeroTreno)));
 
-    // Se ci sono match diretti nei tabelloni partenza/arrivo li controlliamo per primi, ma aggiungiamo anche gli altri di fromList per sicurezza
     const orderedFrom = [
       ...directMatches,
       ...fromList.filter((t) => !toNums.has(String(t.numeroTreno)))
