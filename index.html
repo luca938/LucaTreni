@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Infotreni</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a120e;
+      --card: #121c16;
+      --card-border: rgba(196, 164, 104, 0.18);
+      --gold: #c99a49;
+      --green-pill: #1b3124;
+      --green-border: #38634a;
+      --green-dot: #48bb78;
+      --danger-bg: #3b1c19;
+      --danger-text: #f28b7d;
+      --warn-bg: #382a14;
+      --warn-text: #f5b95f;
+      --text: #eaece9;
+      --muted: #849389;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    /* Nasconde badge iniettati da host esterni */
+    a[href*="netlify.com"],
+    a[href*="netlify.app"][target="_blank"],
+    iframe[src*="netlify"],
+    [class*="netlify-badge"],
+    [id*="netlify-badge"],
+    [data-netlify-badge] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 28px 28px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+      min-height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .subtitle {
+      color: var(--gold);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 38px;
+      font-weight: 400;
+      line-height: 1.05;
+    }
+
+    /* Tasto Aggiorna con feedback di pressione e rotazione */
+    .avatar-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .avatar-btn:active {
+      transform: scale(0.88);
+      background: rgba(201, 154, 73, 0.2);
+      border-color: var(--gold);
+    }
+    .avatar-btn.spinning {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(201, 154, 73, 0.14);
+    }
+    .avatar-btn.spinning .refresh-icon {
+      animation: spin 0.75s linear infinite;
+    }
+    .refresh-icon {
+      display: inline-block;
+      line-height: 1;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Card Selettori Stazioni + Fascia Oraria */
+    .selector-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .selector-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: end;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .select-group label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .select-wrapper {
+      position: relative;
+      border: 1px solid rgba(201, 154, 73, 0.35);
+      border-radius: 12px;
+      background: #0d1611;
+      height: 44px;
+      display: flex;
+      align-items: center;
+    }
+    .select-display {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px;
+      color: var(--text);
+      padding: 0 26px 0 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+      width: 100%;
+    }
+    .select-wrapper select {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .select-wrapper::after {
+      content: "▾";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      pointer-events: none;
+      font-size: 13px;
+    }
+    .swap-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #232419;
+      border: 1px solid rgba(201, 154, 73, 0.4);
+      color: var(--gold);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2px;
+    }
+    .swap-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Tabs Soluzioni / Treno Pinnato */
+    .tabs {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 4px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom: 14px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .tab-btn.active {
+      background: var(--green-pill);
+      border-color: var(--green-border);
+      color: var(--text);
+    }
+    .pin-count {
+      background: var(--gold);
+      color: #0a120e;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 99px;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--green-dot);
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(72, 187, 120, 0.2);
+      transition: background 0.2s ease;
+    }
+    .live-dot.loading {
+      background: var(--gold);
+      box-shadow: 0 0 0 4px rgba(201, 154, 73, 0.25);
+    }
+
+    /* Card Grande (nella schermata Pinnato) */
+    .hero-card {
+      background: linear-gradient(165deg, #1b2419 0%, #111a14 100%);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+    .leg-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 6px 0;
+    }
+    .section-tag {
+      font-size: 11px;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .train-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .badge-delay {
+      background: var(--danger-bg);
+      color: var(--danger-text);
+      border: 1px solid rgba(242, 139, 125, 0.25);
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-warn {
+      background: var(--warn-bg);
+      color: var(--warn-text);
+      border: 1px solid rgba(245, 185, 95, 0.3);
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-ontime {
+      background: var(--green-pill);
+      color: #72e0a0;
+      border: 1px solid var(--green-border);
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-neutral {
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: 12px;
+    }
+
+    .platform-box {
+      border: 1px solid rgba(201, 154, 73, 0.35);
+      background: rgba(10, 18, 14, 0.65);
+      border-radius: 14px;
+      padding: 8px 14px;
+      text-align: center;
+      min-width: 78px;
+      flex-shrink: 0;
+    }
+    .platform-box span {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 1.4px;
+      color: var(--gold);
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+    .platform-box strong {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.05;
+    }
+
+    .transfer-banner {
+      margin: 14px 0;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px dashed rgba(201, 154, 73, 0.45);
+      background: rgba(10, 18, 14, 0.55);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .route-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0 6px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .toggle-stops {
+      background: none;
+      border: none;
+      color: var(--gold);
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .stop-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      font-size: 13px;
+    }
+    .stop-left { display: flex; align-items: center; gap: 10px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #4a5750; flex-shrink: 0; }
+    .dot.done { background: var(--green-dot); box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.18); }
+    .dot.next { background: var(--gold); box-shadow: 0 0 0 3px rgba(201, 154, 73, 0.25); }
+    .time-actual { color: var(--danger-text); font-weight: 600; margin-right: 6px; }
+    .time-sched { color: var(--muted); }
+    .time-sched.crossed { text-decoration: line-through; opacity: 0.6; }
+
+    .backup-box {
+      margin-top: 12px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border-left: 3px solid var(--gold);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Card Compatte (Lista principale Soluzioni) */
+    .upcoming-card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s ease;
+    }
+    .upcoming-card.is-pinned {
+      border-color: rgba(201, 154, 73, 0.55);
+      background: linear-gradient(165deg, rgba(35, 36, 25, 0.65) 0%, #121c16 100%);
+    }
+    .upcoming-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Orari Partenza e Arrivo bilanciati (stessa dimensione e colore) */
+    .upcoming-time,
+    .upcoming-arr {
+      font-family: 'DM Serif Display', serif;
+      font-size: 27px;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    /* Pulsante Pin */
+    .pin-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-size: 15px;
+      transition: all 0.15s ease;
+    }
+    .pin-btn.active {
+      background: rgba(201, 154, 73, 0.2);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .pin-btn:active {
+      transform: scale(0.9);
+    }
+
+    /* Orari grandi bilanciati nella card Pinnato */
+    .time-pair {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 4px 0 6px;
+    }
+    .time-pair .tp-dep,
+    .time-pair .tp-arr {
+      font-family: 'DM Serif Display', serif;
+      font-size: 44px;
+      line-height: 1;
+      color: var(--text);
+    }
+    .time-pair .tp-arrow {
+      color: var(--gold);
+      font-size: 22px;
+      padding-top: 14px;
+    }
+    .time-pair .tp-label {
+      display: block;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 10px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .dur-line { font-size: 13px; color: var(--muted); margin: 4px 0 6px; }
+    .wait-time { text-align: right; white-space: nowrap; flex-shrink: 0; }
+    .wait-time strong { display: block; font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; line-height: 1; }
+    .wait-time span { font-size: 11px; color: var(--muted); }
+    .up-pair { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .up-arrow { color: var(--gold); font-size: 18px; }
+    .leg-line { font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 0 4px; }
+    .leg-line strong { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 22px; color: var(--text); }
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 28px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <div class="subtitle">RE · RV · S5 · S6 TRENORD / TI</div>
+      <h1>Infotreni</h1>
+    </div>
+    <button class="avatar-btn" id="refreshBtn" onclick="refreshAll()" title="Aggiorna">
+      <span class="refresh-icon">↻</span>
+    </button>
+  </div>
+
+  <div class="selector-card">
+    <div class="selector-row">
+      <div class="select-group">
+        <label>Partenza</label>
+        <div class="select-wrapper">
+          <div class="select-display" id="fromDisplay">Tortona</div>
+          <select id="fromSelect" onchange="onStationChange()"></select>
+        </div>
+      </div>
+
+      <button class="swap-btn" onclick="swapStations()" title="Inverti stazioni">⇄</button>
+
+      <div class="select-group">
+        <label>Destinazione</label>
+        <div class="select-wrapper">
+          <div class="select-display" id="toDisplay">MI Rogoredo</div>
+          <select id="toSelect" onchange="onStationChange()"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="select-group">
+      <label>Fascia Oraria</label>
+      <div class="select-wrapper">
+        <div class="select-display" id="windowDisplay">Adesso</div>
+        <select id="windowSelect" onchange="onWindowChange()"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabSolutions" onclick="switchTab('solutions')">
+      Soluzioni
+    </button>
+    <button class="tab-btn" id="tabPinned" onclick="switchTab('pinned')">
+      Treno Pinnato <span id="pinBadge" class="pin-count" style="display:none;">1</span>
+    </button>
+  </div>
+
+  <div class="status-bar">
+    <span id="lastUpdated">Pronto</span>
+    <span class="live-dot" id="liveDot"></span>
+  </div>
+
+  <div id="contentArea"></div>
+
+  <div class="footer-note">Binari RFI · live ViaggiaTreno</div>
+
+  <script>
+    const STATIONS = [
+      { id: "S01810", num: "1810", name: "Tortona", short: "Tortona" },
+      { id: "S01820", num: "1820", name: "Milano Rogoredo", short: "MI Rogoredo" },
+      { id: "S01701", num: "1701", name: "Milano Lambrate", short: "MI Lambrate" },
+      { id: "S01492", num: "1492", name: "Milano Forlanini", short: "MI Forlanini" },
+      { id: "S01700", num: "1700", name: "Milano Centrale", short: "MI Centrale" },
+      { id: "S01645", num: "1645", name: "Milano P. Garibaldi", short: "MI P. Garibaldi" },
+      { id: "S01322", num: "1322", name: "Milano Greco Pirelli", short: "MI Greco P." },
+      { id: "S01707", num: "1707", name: "Cassano d'Adda", short: "Cassano d'A." },
+      { id: "S01708", num: "1708", name: "Treviglio", short: "Treviglio" }
+    ];
+
+    const STATION_BY_ID = Object.fromEntries(STATIONS.map(s => [s.id, s]));
+
+    let activeTab = "solutions"; // "solutions" | "pinned"
+    let currentOffset = 0;
+    let baseTs = Date.now();
+    const WINDOWS = 5;
+    const WINDOW_MS = 5 * 3600000;
+    let currentViewData = null;
+    let expandedStops = { leg1: false, leg2: false };
+
+    function abbrStation(name) {
+      if (!name) return "";
+      const s = String(name).trim();
+      const match = STATIONS.find(
+        st => st.name.toLowerCase() === s.toLowerCase() || st.short.toLowerCase() === s.toLowerCase()
+      );
+      if (match) return match.short;
+
+      return s
+        .replace(/^MILANO\s+PORTA\s+/i, "MI P. ")
+        .replace(/^MILANO\s+P\.\s*/i, "MI P. ")
+        .replace(/^MILANO\s+GRECO\s+PIRELLI/i, "MI Greco P.")
+        .replace(/^MILANO\s+/i, "MI ")
+        .replace(/^CASSANO\s+D'ADDA/i, "Cassano d'A.")
+        .replace(/\bPORTA\s+/gi, "P. ")
+        .replace(/\bSAN\s+/gi, "S. ")
+        .replace(/\bSANTA\s+/gi, "S.ta ");
+    }
+
+    function fmtTime(msOrIso) {
+      if (!msOrIso) return "--:--";
+      const d = new Date(msOrIso);
+      if (isNaN(d.getTime())) return "--:--";
+      return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function fmtDur(min) {
+      if (min < 60) return `${min} min`;
+      return `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}min`;
+    }
+
+    function durationLine(depMs, arrMs, delayMin) {
+      const dur = Math.round((arrMs - depMs) / 60000);
+      if (!isFinite(dur) || dur <= 0) return "";
+      return `${fmtDur(dur)}${delayMin > 0 ? ` + ${delayMin} min rit.` : ""}`;
+    }
+
+    function delayBadge(r) {
+      return `<span class="${r > 0 ? 'badge-delay' : 'badge-ontime'}">${r > 0 ? `+${r} min` : 'In orario'}</span>`;
+    }
+
+    function setLoadingState(isLoading, message) {
+      const btn = document.getElementById("refreshBtn");
+      const dot = document.getElementById("liveDot");
+      const label = document.getElementById("lastUpdated");
+      if (isLoading) {
+        btn.classList.add("spinning");
+        dot.classList.add("loading");
+        label.textContent = message || "Aggiornamento in corso...";
+      } else {
+        btn.classList.remove("spinning");
+        dot.classList.remove("loading");
+        label.textContent = message || `Aggiornato alle ${fmtTime(Date.now())} ✓`;
+      }
+    }
+
+    function getPinned() {
+      try {
+        const raw = localStorage.getItem("vt_pinned_item");
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function savePinned(item) {
+      if (!item) {
+        localStorage.removeItem("vt_pinned_item");
+      } else {
+        localStorage.setItem("vt_pinned_item", JSON.stringify(item));
+      }
+      updatePinBadge();
+    }
+
+    function getItemKey(item, kind) {
+      if (!item) return "";
+      if (kind === "direct" || item.numeroTreno) {
+        return `dir-${item.numeroTreno}-${item.orarioPartenza}`;
+      }
+      return `conn-${item.leg1.numeroTreno}-${item.leg2.numeroTreno}-${item.leg1.orarioPartenza}`;
+    }
+
+    function updatePinBadge() {
+      const pinned = getPinned();
+      const badge = document.getElementById("pinBadge");
+      badge.style.display = pinned ? "inline-block" : "none";
+    }
+
+    function togglePinByIndex(idx) {
+      if (!currentViewData || !currentViewData.items[idx]) return;
+      const item = currentViewData.items[idx];
+      const kind = currentViewData.type;
+      const key = getItemKey(item, kind);
+      const currentPinned = getPinned();
+
+      if (currentPinned && currentPinned.key === key) {
+        savePinned(null);
+        renderCurrentView();
+      } else {
+        expandedStops = { leg1: false, leg2: false };
+        savePinned({ key, kind, data: item, pinnedAt: Date.now() });
+        switchTab("pinned");
+        refreshPinnedLive();
+      }
+    }
+
+    function unpinCurrent() {
+      savePinned(null);
+      renderCurrentView();
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.getElementById("tabSolutions").classList.toggle("active", tab === "solutions");
+      document.getElementById("tabPinned").classList.toggle("active", tab === "pinned");
+      renderCurrentView();
+    }
+
+    async function fetchVT(endpoint, asText = false) {
+      try {
+        const res = await fetch(`/api/vt?endpoint=${encodeURIComponent(endpoint)}`);
+        if (!res.ok) return null;
+        const text = await res.text();
+        if (!text || text.trim().startsWith("<")) return null;
+        return asText ? text : JSON.parse(text);
+      } catch {
+        return null;
+      }
+    }
+
+    function findStopIdx(fermate, stationId, stationNameHint) {
+      if (!Array.isArray(fermate)) return -1;
+      if (stationId) {
+        const idx = fermate.findIndex(f =>
+          f.id === stationId ||
+          (stationId === "S01645" && f.id === "S01642") ||
+          (stationId === "S01642" && f.id === "S01645")
+        );
+        if (idx !== -1) return idx;
+      }
+      if (stationNameHint) {
+        const clean = stationNameHint.toUpperCase()
+          .replace("MILANO ", "")
+          .replace("MI ", "")
+          .replace("PORTA ", "")
+          .replace("P. ", "")
+          .replace("GRECO P.", "GRECO")
+          .replace("D'ADDA", "")
+          .replace("D'A.", "")
+          .trim();
+        return fermate.findIndex(f => (f.stazione || "").toUpperCase().includes(clean));
+      }
+      return -1;
+    }
+
+    async function fetchLiveAndamentoForLeg(leg) {
+      if (leg.isFutureDay) return null;
+      const numStr = String(leg.numeroTreno).trim();
+      let cod = leg.codOrigine;
+      let depTs = leg.dataPartenzaTreno;
+
+      if (!cod || !depTs) {
+        const autoRaw = await fetchVT(`/cercaNumeroTrenoTrenoAutocomplete/${numStr}`, true);
+        if (autoRaw) {
+          const firstLine = autoRaw.trim().split("\n")[0];
+          if (firstLine && firstLine.includes("|")) {
+            const parts = firstLine.split("|")[1].trim().split("-");
+            if (parts.length >= 3) {
+              cod = parts[1];
+              depTs = parts[2];
+            }
+          }
+        }
+      }
+      if (!cod || !depTs) return null;
+      return await fetchVT(`/andamentoTreno/${cod}/${numStr}/${depTs}`, false);
+    }
+
+    function applyLiveToLeg(leg, and) {
+      if (!and || !Array.isArray(and.fermate) || leg.isFutureDay) return leg;
+
+      const idxA = findStopIdx(and.fermate, leg.fromId, leg.fromName);
+      const idxB = findStopIdx(and.fermate, leg.toId, leg.toName);
+
+      const stopA = idxA !== -1 ? and.fermate[idxA] : null;
+      const stopB = idxB !== -1 ? and.fermate[idxB] : null;
+
+      const ritardo = and.ritardo ?? leg.ritardo ?? 0;
+      const binPartenza =
+        stopA?.binarioEffettivoPartenzaDescrizione ||
+        stopA?.binarioProgrammatoPartenzaDescrizione ||
+        leg.binarioPartenza ||
+        "-";
+      const binArrivo =
+        stopB?.binarioEffettivoArrivoDescrizione ||
+        stopB?.binarioProgrammatoArrivoDescrizione ||
+        leg.binarioArrivo ||
+        "-";
+
+      const sliceStart = idxA !== -1 ? idxA : 0;
+      const sliceEnd = idxB !== -1 ? idxB + 1 : and.fermate.length;
+      const rawSlice = and.fermate.slice(sliceStart, sliceEnd);
+
+      const fermate = rawSlice.map((f, i) => {
+        const prevDone = i > 0 && rawSlice[i - 1].actualFermataType === 1;
+        const currDone = f.actualFermataType === 1;
+        return {
+          stazione: abbrStation(f.stazione),
+          programmata: f.partenza_teorica || f.arrivo_teorico || f.programmata,
+          effettiva: f.partenzaReale || f.arrivoReale || null,
+          ritardo: f.ritardoPartenza ?? f.ritardoArrivo ?? 0,
+          effettuata: currDone,
+          inArrivo: !currDone && prevDone
+        };
+      });
+
+      return {
+        ...leg,
+        origine: abbrStation(and.origine || leg.origine),
+        destinazione: abbrStation(and.destinazione || leg.destinazione),
+        ritardo,
+        binarioPartenza: binPartenza,
+        binarioArrivo: binArrivo,
+        orarioPartenzaStimato: stopA?.partenzaReale || (leg.orarioPartenza + Math.max(0, ritardo) * 60000),
+        orarioArrivoStimato: stopB?.arrivoReale || (leg.orarioArrivo + Math.max(0, ritardo) * 60000),
+        arrivatoADestinazione: stopB ? stopB.actualFermataType === 1 : Boolean(and.arrivato),
+        fermate
+      };
+    }
+
+    async function refreshPinnedLive() {
+      const pinned = getPinned();
+      if (!pinned) return;
+
+      setLoadingState(true, "Aggiornamento treno pinnato live...");
+      try {
+        if (pinned.kind === "direct") {
+          const and = await fetchLiveAndamentoForLeg(pinned.data);
+          if (and) {
+            pinned.data = applyLiveToLeg(pinned.data, and);
+            savePinned(pinned);
+          }
+        } else {
+          const [and1, and2] = await Promise.all([
+            fetchLiveAndamentoForLeg(pinned.data.leg1),
+            fetchLiveAndamentoForLeg(pinned.data.leg2)
+          ]);
+          if (and1) pinned.data.leg1 = applyLiveToLeg(pinned.data.leg1, and1);
+          if (and2) pinned.data.leg2 = applyLiveToLeg(pinned.data.leg2, and2);
+          pinned.data.waitRealMin = Math.round(
+            (pinned.data.leg2.orarioPartenzaStimato - pinned.data.leg1.orarioArrivoStimato) / 60000
+          );
+          savePinned(pinned);
+        }
+        setLoadingState(false);
+        renderCurrentView();
+      } catch {
+        setLoadingState(false, "Aggiornato");
+      }
+    }
+
+    function initSelectors() {
+      const fromEl = document.getElementById("fromSelect");
+      fromEl.innerHTML = STATIONS.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+      fromEl.value = localStorage.getItem("vt_from") || "S01810";
+      populateToSelect(localStorage.getItem("vt_to") || "S01708");
+      syncSelectDisplays();
+    }
+
+    function populateToSelect(preferredTo) {
+      const fromId = document.getElementById("fromSelect").value;
+      const toEl = document.getElementById("toSelect");
+      const valid = STATIONS.filter(s => s.id !== fromId);
+      toEl.innerHTML = valid.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+      if (valid.some(s => s.id === preferredTo)) toEl.value = preferredTo;
+    }
+
+    function syncSelectDisplays() {
+      const fromId = document.getElementById("fromSelect").value;
+      const toId = document.getElementById("toSelect").value;
+      document.getElementById("fromDisplay").textContent = STATION_BY_ID[fromId]?.short || "";
+      document.getElementById("toDisplay").textContent = STATION_BY_ID[toId]?.short || "";
+    }
+
+    function windowLabel(k) {
+      const start = baseTs + k * WINDOW_MS;
+      const end = start + WINDOW_MS;
+      const startDay = new Date(start).getDate();
+      const baseDay = new Date(baseTs).getDate();
+      const prefix = k === 0 ? "Adesso" : (startDay !== baseDay ? "Domani " : "Oggi ") + fmtTime(start);
+      return `${prefix} – ${fmtTime(end)}`;
+    }
+
+    function renderWindowSelect() {
+      const sel = document.getElementById("windowSelect");
+      let html = "";
+      for (let k = 0; k < WINDOWS; k++) {
+        html += `<option value="${k}" ${k === currentOffset ? "selected" : ""}>${windowLabel(k)}</option>`;
+      }
+      sel.innerHTML = html;
+      document.getElementById("windowDisplay").textContent = windowLabel(currentOffset);
+    }
+
+    function onWindowChange() {
+      currentOffset = parseInt(document.getElementById("windowSelect").value, 10) || 0;
+      document.getElementById("windowDisplay").textContent = windowLabel(currentOffset);
+      if (activeTab === "pinned") switchTab("solutions");
+      loadTrains();
+    }
+
+    function refreshAll() {
+      baseTs = Date.now();
+      renderWindowSelect();
+      if (activeTab === "pinned" && getPinned()) {
+        refreshPinnedLive();
+      } else {
+        loadTrains();
+      }
+    }
+
+    function onStationChange() {
+      populateToSelect(document.getElementById("toSelect").value);
+      syncSelectDisplays();
+      currentOffset = 0;
+      baseTs = Date.now();
+      renderWindowSelect();
+      if (activeTab === "pinned") switchTab("solutions");
+      loadTrains();
+    }
+
+    function swapStations() {
+      const fromEl = document.getElementById("fromSelect");
+      const toEl = document.getElementById("toSelect");
+      const oldFrom = fromEl.value;
+      const oldTo = toEl.value;
+      fromEl.value = oldTo;
+      populateToSelect(oldFrom);
+      syncSelectDisplays();
+      if (activeTab === "pinned") switchTab("solutions");
+      loadTrains();
+    }
+
+    async function loadTrains() {
+      const from = document.getElementById("fromSelect").value;
+      const to = document.getElementById("toSelect").value;
+      localStorage.setItem("vt_from", from);
+      localStorage.setItem("vt_to", to);
+
+      setLoadingState(true, "Ricerca soluzioni su ViaggiaTreno...");
+      const content = document.getElementById("contentArea");
+      if (activeTab === "solutions") {
+        content.innerHTML = `<div class="upcoming-card">Ricerca treni su ViaggiaTreno...</div>`;
+      }
+
+      try {
+        const qs = new URLSearchParams({ from, to, offset: currentOffset, t0: baseTs });
+        const res = await fetch(`/api/treni?${qs}`);
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { throw new Error(`Risposta non valida (HTTP ${res.status})`); }
+        if (!res.ok) throw new Error(data.details || data.error || `HTTP ${res.status}`);
+
+        if (data.type === "direct") {
+          currentViewData = { type: "direct", items: data.trains || [] };
+        } else {
+          currentViewData = { type: "connections", items: data.connections || [], stats: data.stats || null };
+        }
+
+        const pinned = getPinned();
+        if (pinned) {
+          const match = currentViewData.items.find(it => getItemKey(it, currentViewData.type) === pinned.key);
+          if (match) {
+            pinned.data = match;
+            savePinned(pinned);
+          }
+        }
+
+        setLoadingState(false);
+        renderCurrentView();
+      } catch (e) {
+        setLoadingState(false, "Errore di caricamento");
+        if (activeTab === "solutions") {
+          content.innerHTML = `<div class="upcoming-card">Errore: ${e.message}. Tocca ↻ per riprovare.</div>`;
+        }
+      }
+    }
+
+    function renderCurrentView() {
+      updatePinBadge();
+      if (activeTab === "pinned") {
+        renderPinnedTab();
+        return;
+      }
+      if (!currentViewData) return;
+      if (currentViewData.type === "direct") {
+        renderDirectList(currentViewData.items);
+      } else {
+        renderConnectionsList(currentViewData.items);
+      }
+    }
+
+    // SCHERMATA 1: Tutte le soluzioni in formato compatto con orari di uguale importanza
+    function renderDirectList(trains) {
+      const content = document.getElementById("contentArea");
+      if (!trains.length) {
+        content.innerHTML = `<div class="upcoming-card">Nessun treno trovato in questa fascia oraria.</div>`;
+        return;
+      }
+
+      const pinned = getPinned();
+
+      content.innerHTML = `
+        <div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni dirette (${trains.length}) · Tocca 📌 per seguire il treno</div>
+        ${trains.map((t, idx) => {
+          const isPinned = pinned && pinned.key === getItemKey(t, "direct");
+          return `
+            <div class="upcoming-card ${isPinned ? 'is-pinned' : ''}">
+              <div class="upcoming-top">
+                <div style="flex:1;cursor:pointer;" onclick="togglePinByIndex(${idx})">
+                  <div class="up-pair">
+                    <span class="upcoming-time">${fmtTime(t.orarioPartenza)}</span>
+                    <span class="up-arrow">→</span>
+                    <span class="upcoming-arr">${fmtTime(t.orarioArrivoStimato)}</span>
+                    ${delayBadge(t.ritardo)}
+                  </div>
+                  <div class="dur-line" style="margin-bottom:0;">
+                    ${durationLine(t.orarioPartenza, t.orarioArrivo, t.ritardo)} · ${t.categoria} ${t.numeroTreno}
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <div style="text-align:right;">
+                    <span style="color:var(--muted);font-size:11px;display:block;">BIN.</span>
+                    <strong style="font-family:'DM Serif Display',serif;font-size:22px;">${t.binarioPartenza}</strong>
+                  </div>
+                  <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx})" title="Pinna questo treno">
+                    📌
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      `;
+    }
+
+    function renderConnectionsList(connections) {
+      const content = document.getElementById("contentArea");
+      if (!connections.length) {
+        content.innerHTML = `<div class="upcoming-card">Nessuna soluzione trovata in questa fascia oraria.</div>`;
+        return;
+      }
+
+      const pinned = getPinned();
+
+      content.innerHTML = `
+        <div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni con cambio (${connections.length}) · Tocca 📌 per seguire</div>
+        ${connections.map((c, idx) => {
+          const isPinned = pinned && pinned.key === getItemKey(c, "connections");
+          const totDelay = Math.max(0, Math.round((c.leg2.orarioArrivoStimato - c.leg2.orarioArrivo) / 60000));
+          return `
+            <div class="upcoming-card ${isPinned ? 'is-pinned' : ''}">
+              <div class="upcoming-top">
+                <div style="flex:1;cursor:pointer;" onclick="togglePinByIndex(${idx})">
+                  <div class="up-pair">
+                    <span class="upcoming-time">${fmtTime(c.leg1.orarioPartenza)}</span>
+                    <span class="up-arrow">→</span>
+                    <span class="upcoming-arr">${fmtTime(c.leg2.orarioArrivoStimato)}</span>
+                    ${delayBadge(c.leg1.ritardo)}
+                  </div>
+                  <div class="dur-line" style="margin-bottom:0;">
+                    ${durationLine(c.leg1.orarioPartenza, c.leg2.orarioArrivo, totDelay)}
+                    · Treno ${c.leg1.numeroTreno} + ${c.leg2.numeroTreno}
+                  </div>
+                  <div style="font-size:12px;color:var(--gold);margin-top:3px;">
+                    Cambio a ${abbrStation(c.hubArrivalName)} (${c.waitRealMin} min · bin. ${c.leg1.binarioArrivo} → ${c.leg2.binarioPartenza})
+                  </div>
+                </div>
+                <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx})" title="Pinna questa soluzione">
+                  📌
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      `;
+    }
+
+    // SCHERMATA 2: Dettaglio Treno Pinnato (senza box "Posizione treno", con orari pari e Bin. 1° e Bin. 2° grandi)
+    function renderPinnedTab() {
+      const content = document.getElementById("contentArea");
+      const pinned = getPinned();
+
+      if (!pinned || !pinned.data) {
+        content.innerHTML = `
+          <div class="upcoming-card" style="text-align:center;padding:28px 18px;">
+            <div style="font-size:26px;margin-bottom:8px;">📌</div>
+            <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Nessun treno pinnato</div>
+            <div style="font-size:13px;color:var(--muted);">
+              Tocca l'icona 📌 accanto a un treno nella scheda <strong>Soluzioni</strong> per fissarlo qui e seguirlo anche dopo la partenza.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (pinned.kind === "direct") {
+        const next = pinned.data;
+        const stops = next.fermate || [];
+        const stopsToShow = expandedStops.leg1 ? stops : stops.slice(0, 6);
+        const binArr = next.binarioArrivo && next.binarioArrivo !== "-" ? ` · bin. ${next.binarioArrivo}` : "";
+
+        content.innerHTML = `
+          <div class="hero-card">
+            <div class="hero-top">
+              <div>
+                <div class="section-tag" style="color:var(--gold);">📌 Treno Pinnato · ${abbrStation(next.fromName)} ➔ ${abbrStation(next.toName)}</div>
+                <div class="time-pair">
+                  <div><span class="tp-label">Parte</span><span class="tp-dep">${fmtTime(next.orarioPartenza)}</span></div>
+                  <span class="tp-arrow">→</span>
+                  <div><span class="tp-label">Arriva</span><span class="tp-arr">${fmtTime(next.orarioArrivoStimato)}</span></div>
+                </div>
+                <div class="dur-line">${durationLine(next.orarioPartenza, next.orarioArrivo, next.ritardo)}</div>
+                <div class="train-meta">
+                  <span>${next.categoria} ${next.numeroTreno}</span>
+                  ${delayBadge(next.ritardo)}
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                <button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi pin">📌</button>
+                <div class="platform-box">
+                  <span>BINARIO</span>
+                  <strong>${next.binarioPartenza}</strong>
+                </div>
+              </div>
+            </div>
+
+            ${stops.length ? `
+              <div class="route-header">
+                <span class="section-tag" style="margin:0;">Percorso (${stops.length} fermate)</span>
+                <button class="toggle-stops" onclick="expandedStops.leg1=!expandedStops.leg1;renderCurrentView();">
+                  ${expandedStops.leg1 ? 'Mostra meno ▴' : `Tutte (${stops.length}) ▾`}
+                </button>
+              </div>
+              ${stopsToShow.map(f => `
+                <div class="stop-row">
+                  <div class="stop-left">
+                    <span class="dot ${f.effettuata ? 'done' : f.inArrivo ? 'next' : ''}"></span>
+                    <span>${abbrStation(f.stazione)}</span>
+                  </div>
+                  <div>
+                    ${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}
+                    <span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span>
+                  </div>
+                </div>
+              `).join("")}
+            ` : ''}
+
+            <div style="margin-top:12px;color:var(--muted);font-size:13px;">
+              Arrivo a ${abbrStation(next.toName)}${binArr}
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Pinned Connection (2 tratte) con BIN. 1° e BIN. 2° grandi e senza box "Posizione treno"
+      const next = pinned.data;
+      const l1 = next.leg1, l2 = next.leg2;
+      const totDelay = Math.max(0, Math.round((l2.orarioArrivoStimato - l2.orarioArrivo) / 60000));
+      const stops1 = l1.fermate || [];
+      const stops2 = l2.fermate || [];
+      const stops1Show = expandedStops.leg1 ? stops1 : stops1.slice(0, 4);
+      const stops2Show = expandedStops.leg2 ? stops2 : stops2.slice(0, 4);
+
+      content.innerHTML = `
+        <div class="hero-card">
+          <div class="hero-top">
+            <div>
+              <div class="section-tag" style="color:var(--gold);">📌 Viaggio Pinnato</div>
+              <div class="time-pair">
+                <div><span class="tp-label">Parte</span><span class="tp-dep">${fmtTime(l1.orarioPartenza)}</span></div>
+                <span class="tp-arrow">→</span>
+                <div><span class="tp-label">Arriva</span><span class="tp-arr">${fmtTime(l2.orarioArrivoStimato)}</span></div>
+              </div>
+              <div class="dur-line">${durationLine(l1.orarioPartenza, l2.orarioArrivo, totDelay)}</div>
+            </div>
+            <button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi pin">📌</button>
+          </div>
+
+          <!-- 1ª TRATTA con BIN. 1° grande -->
+          <div class="leg-row">
+            <div>
+              <div class="section-tag">1ª tratta · ${abbrStation(l1.fromName)} ➔ ${abbrStation(l1.toName)}</div>
+              <div class="leg-line">
+                <strong>${fmtTime(l1.orarioPartenza)}</strong>
+                <span class="up-arrow">→</span>
+                <strong>${fmtTime(l1.orarioArrivoStimato)}</strong>
+              </div>
+              <div class="train-meta">
+                <span>${l1.categoria} ${l1.numeroTreno}</span>
+                ${delayBadge(l1.ritardo)}
+              </div>
+            </div>
+            <div class="platform-box">
+              <span>BIN. 1°</span>
+              <strong>${l1.binarioPartenza}</strong>
+            </div>
+          </div>
+
+          ${stops1.length ? `
+            <div class="route-header">
+              <span class="section-tag" style="margin:0;">Fermate 1ª tratta</span>
+              <button class="toggle-stops" onclick="expandedStops.leg1=!expandedStops.leg1;renderCurrentView();">
+                ${expandedStops.leg1 ? 'Chiudi ▴' : `Tutte (${stops1.length}) ▾`}
+              </button>
+            </div>
+            ${stops1Show.map(f => `
+              <div class="stop-row">
+                <div class="stop-left">
+                  <span class="dot ${f.effettuata ? 'done' : ''}"></span>
+                  <span>${abbrStation(f.stazione)}</span>
+                </div>
+                <div>
+                  ${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}
+                  <span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span>
+                </div>
+              </div>
+            `).join("")}
+          ` : ''}
+
+          <!-- BANNER INTERSCAMBIO -->
+          <div class="transfer-banner">
+            <div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gold);margin-bottom:4px;text-transform:uppercase;">
+                Cambio a ${abbrStation(next.hubArrivalName)}
+              </div>
+              <div style="font-size:13px;">
+                Arrivi al <strong>bin. ${l1.binarioArrivo}</strong> ➔ riparti dal <strong>bin. ${l2.binarioPartenza}</strong>
+              </div>
+            </div>
+            <div class="wait-time">
+              <strong>${next.waitRealMin} min</strong>
+              <span>per il cambio</span>
+            </div>
+          </div>
+
+          <!-- 2ª TRATTA con BIN. 2° grande (identico a BIN. 1°) -->
+          <div class="leg-row">
+            <div>
+              <div class="section-tag">2ª tratta · ${abbrStation(l2.fromName)} ➔ ${abbrStation(l2.toName)}</div>
+              <div class="leg-line">
+                <strong>${fmtTime(l2.orarioPartenza)}</strong>
+                <span class="up-arrow">→</span>
+                <strong>${fmtTime(l2.orarioArrivoStimato)}</strong>
+              </div>
+              <div class="train-meta">
+                <span>${l2.categoria} ${l2.numeroTreno}</span>
+                ${delayBadge(l2.ritardo)}
+              </div>
+            </div>
+            <div class="platform-box">
+              <span>BIN. 2°</span>
+              <strong>${l2.binarioPartenza}</strong>
+            </div>
+          </div>
+
+          ${stops2.length ? `
+            <div class="route-header">
+              <span class="section-tag" style="margin:0;">Fermate 2ª tratta</span>
+              <button class="toggle-stops" onclick="expandedStops.leg2=!expandedStops.leg2;renderCurrentView();">
+                ${expandedStops.leg2 ? 'Chiudi ▴' : `Tutte (${stops2.length}) ▾`}
+              </button>
+            </div>
+            ${stops2Show.map(f => `
+              <div class="stop-row">
+                <div class="stop-left">
+                  <span class="dot ${f.effettuata ? 'done' : ''}"></span>
+                  <span>${abbrStation(f.stazione)}</span>
+                </div>
+                <div>
+                  ${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}
+                  <span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span>
+                </div>
+              </div>
+            `).join("")}
+          ` : ''}
+
+          ${next.backupLeg2 ? `
+            <div class="backup-box">
+              <strong>Piano B da ${abbrStation(l2.fromName)}:</strong> treno <strong>${next.backupLeg2.numeroTreno}</strong> delle <strong>${fmtTime(next.backupLeg2.orarioPartenza)}</strong> (bin. ${next.backupLeg2.binarioPartenza})
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    initSelectors();
+    renderWindowSelect();
+    updatePinBadge();
+    loadTrains();
+  </script>
+</body>
+</html>
