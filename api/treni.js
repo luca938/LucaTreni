@@ -1,4 +1,8 @@
 const VT_BASE = "http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno";
+
+// Orari programmati S5/S6 (Trenord GTFS), non presenti su ViaggiaTreno
+let S56 = null;
+try { S56 = require("../data/s56.json"); } catch (e) { S56 = null; }
 const DAY_MS = 24 * 3600000;
 const H_MS = 3600000;
 
@@ -40,17 +44,75 @@ const STATION_NAMES = {
   S01492: "Milano Forlanini",
   S01700: "Milano Centrale",
   S01645: "Milano P. Garibaldi",
+  S01647: "Milano P. Garibaldi",
   S01642: "Milano P. Garibaldi",
   S01322: "Milano Greco Pirelli",
   S01707: "Cassano d'Adda",
   S01708: "Treviglio"
 };
 
+const GARIBALDI_IDS = new Set(["S01645", "S01642", "S01647"]);
+
 function matchStation(stopId, targetId) {
   if (stopId === targetId) return true;
-  if (targetId === "S01645" && stopId === "S01642") return true;
-  if (targetId === "S01642" && stopId === "S01645") return true;
+  if (GARIBALDI_IDS.has(stopId) && GARIBALDI_IDS.has(targetId)) return true;
   return false;
+}
+
+function ymdRome(ms) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" })
+      .formatToParts(new Date(ms)).map((x) => [x.type, x.value])
+  );
+  return Number(p.year + p.month + p.day);
+}
+
+let S56_SETS = null;
+
+// Trasforma le corse S5/S6 programmate in oggetti simili a quelli di ViaggiaTreno
+function buildS56(todayMid, nowMs, winStart, winEnd) {
+  if (!S56 || !Array.isArray(S56.trips)) return [];
+  if (!S56_SETS) S56_SETS = S56.dateSets.map((a) => new Set(a));
+
+  const days = [];
+  for (let k = -1; k <= 2; k++) {
+    const mid = romeMidnight(new Date(todayMid + k * DAY_MS + 12 * H_MS));
+    days.push({ mid, ymd: ymdRome(mid + 12 * H_MS) });
+  }
+
+  const out = [];
+  for (const t of S56.trips) {
+    for (const day of days) {
+      if (!S56_SETS[t.d].has(day.ymd)) continue;
+      const first = day.mid + t.s[0][2] * 1000;
+      const last = day.mid + t.s[t.s.length - 1][1] * 1000;
+      if (last < winStart - 2 * H_MS || first > winEnd + 4 * H_MS) continue;
+
+      const fermate = t.s.map(([id, arr, dep]) => ({
+        id,
+        stazione: S56.names[id] || id,
+        arrivo_teorico: day.mid + arr * 1000,
+        partenza_teorica: day.mid + dep * 1000,
+        programmata: day.mid + dep * 1000,
+        actualFermataType: day.mid + dep * 1000 < nowMs ? 1 : 0
+      }));
+
+      out.push({
+        summary: { numeroTreno: t.n, codOrigine: "S56-" + t.r, dataPartenzaTreno: day.mid, categoria: t.r },
+        andamento: {
+          _fixed: true,
+          numeroTreno: t.n,
+          compTipologiaTreno: t.r,
+          origine: fermate[0].stazione,
+          destinazione: fermate[fermate.length - 1].stazione,
+          ritardo: 0,
+          stazioneUltimoRilevamento: "",
+          fermate
+        }
+      });
+    }
+  }
+  return out;
 }
 
 async function fetchText(url) {
@@ -97,8 +159,14 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
   let durMs = rawArrSched - rawDepSched;
   if (durMs < 0) durMs += DAY_MS;
 
-  let dayShift = Math.floor((refStart - rawDepSched) / DAY_MS);
-  while (rawDepSched + dayShift * DAY_MS < refStart) dayShift++;
+  const fixed = !!andamento._fixed;
+  let dayShift = 0;
+  if (!fixed) {
+    dayShift = Math.floor((refStart - rawDepSched) / DAY_MS);
+    while (rawDepSched + dayShift * DAY_MS < refStart) dayShift++;
+  } else if (rawDepSched < refStart) {
+    return null;
+  }
   const shiftMs = dayShift * DAY_MS;
 
   const depSched = rawDepSched + shiftMs;
@@ -168,7 +236,8 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
     orarioPartenzaStimato: depReal,
     orarioArrivo: arrSched,
     orarioArrivoStimato: arrReal,
-    ritardo,
+    ritardo: fixed ? null : ritardo,
+    programmato: fixed,
     binarioPartenza: binPartenza,
     binarioArrivo: binArrivo,
     ultimoRilevamentoStazione: isLiveRun ? (pretty(andamento.stazioneUltimoRilevamento) || "--") : "--",
@@ -330,8 +399,9 @@ async function mainHandler(q) {
     ].slice(0, MAX_FROM_TRAINS);
 
     const fromRaw = await Promise.all(orderedFrom.map(loadTrain));
+    const s56Trains = buildS56(todayMid, nowMs, winStart, winEnd);
 
-    const directTrains = fromRaw
+    const directTrains = [...fromRaw, ...s56Trains]
       .map(({ summary, andamento }) => extractLeg(andamento, summary, from, to, lowBound, winEnd, nowMs))
       .filter(Boolean)
       .sort((a, b) => a.orarioPartenza - b.orarioPartenza);
@@ -348,8 +418,8 @@ async function mainHandler(q) {
 
     const toRaw = await Promise.all(toList.slice(0, MAX_TO_TRAINS).map(loadTrain));
 
-    const fromOk = fromRaw.filter((x) => x.andamento && Array.isArray(x.andamento.fermate));
-    const toOk = toRaw.filter((x) => x.andamento && Array.isArray(x.andamento.fermate));
+    const fromOk = [...fromRaw, ...s56Trains].filter((x) => x.andamento && Array.isArray(x.andamento.fermate));
+    const toOk = [...toRaw, ...s56Trains].filter((x) => x.andamento && Array.isArray(x.andamento.fermate));
 
     const found = [];
     for (const A of fromOk) {

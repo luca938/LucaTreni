@@ -79,6 +79,7 @@
     .train-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 14px; }
     .badge-delay { background: var(--danger-bg); color: var(--danger-text); border: 1px solid rgba(242, 139, 125, 0.25); padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
     .badge-warn { background: var(--warn-bg); color: var(--warn-text); border: 1px solid rgba(245, 185, 95, 0.3); padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+    .badge-prog { background: rgba(255,255,255,0.08); color: var(--muted); border: 1px solid rgba(255,255,255,0.18); padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
     .badge-ontime { background: var(--green-pill); color: #72e0a0; border: 1px solid var(--green-border); padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
     .platform-box { border: 1px solid rgba(201, 154, 73, 0.35); background: rgba(10, 18, 14, 0.65); border-radius: 14px; padding: 8px 14px; text-align: center; min-width: 78px; flex-shrink: 0; }
     .platform-box span { display: block; font-size: 10px; letter-spacing: 1.4px; color: var(--gold); margin-bottom: 2px; text-transform: uppercase; }
@@ -262,7 +263,7 @@
     function fmtDur(min) { return min < 60 ? `${min} min` : `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}min`; }
     function durationLine(depMs, arrMs, delayMin) { const dur = Math.round((arrMs - depMs) / 60000); if (!isFinite(dur) || dur <= 0) return ""; return `${fmtDur(dur)}${delayMin > 0 ? ` + ${delayMin} min rit.` : ""}`; }
     function destLabel(dest) { return dest ? ` <span class="dir-tag">per ${abbrStation(dest)}</span>` : ""; }
-    function delayBadge(r) { return `<span class="${r > 0 ? 'badge-delay' : 'badge-ontime'}">${r > 0 ? `+${r} min` : 'In orario'}</span>`; }
+    function delayBadge(r) { if (r === null) return `<span class="badge-prog">Orario programmato</span>`; return `<span class="${r > 0 ? 'badge-delay' : 'badge-ontime'}">${r > 0 ? `+${r} min` : 'In orario'}</span>`; }
     function setLoadingState(isLoading, message) {
       const btn = document.getElementById("refreshBtn"), dot = document.getElementById("liveDot"), label = document.getElementById("lastUpdated");
       if (isLoading) { btn.classList.add("spinning"); dot.classList.add("loading"); label.textContent = message || "Aggiornamento in corso..."; }
