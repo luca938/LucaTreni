@@ -80,7 +80,6 @@ async function fetchJson(url) {
   }
 }
 
-// Estrae i dati di una tratta riallineando l'orario programmato alla finestra richiesta [refStart, refEnd]
 function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, nowMs) {
   if (!andamento || !Array.isArray(andamento.fermate)) return null;
 
@@ -98,7 +97,6 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
   let durMs = rawArrSched - rawDepSched;
   if (durMs < 0) durMs += DAY_MS;
 
-  // Calcola di quanti giorni interi traslare l'orario programmato per cadere dentro [refStart, refEnd)
   let dayShift = Math.floor((refStart - rawDepSched) / DAY_MS);
   while (rawDepSched + dayShift * DAY_MS < refStart) dayShift++;
   const shiftMs = dayShift * DAY_MS;
@@ -107,7 +105,6 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
   if (depSched >= refEnd) return null;
   const arrSched = depSched + durMs;
 
-  // Se la corsa proiettata è nel futuro rispetto ad ora (o traslata di giorno), è una corsa futura
   const isFutureDay = dayShift !== 0 || depSched > nowMs + 1800000;
   if (!isFutureDay && (stopA.actualFermataType === 3 || stopB.actualFermataType === 3)) return null;
 
@@ -183,8 +180,8 @@ function extractLeg(andamento, summary, stationA, stationB, refStart, refEnd, no
 }
 
 const WINDOW_H = 6;
-const MAX_FROM_TRAINS = 60;
-const MAX_TO_TRAINS = 70;
+const MAX_FROM_TRAINS = 90;
+const MAX_TO_TRAINS = 95;
 
 async function mainHandler(q) {
   const { from, to } = q || {};
@@ -199,8 +196,6 @@ async function mainHandler(q) {
     const MIN_WAIT = 4;
     const MAX_WAIT = 75;
 
-    // Fasce orarie fisse da 6 ore a partire dalla mezzanotte di oggi:
-    // slot 0: 00-06, slot 1: 06-12, slot 2: 12-18, slot 3: 18-24, slot 4..7: domani
     const defaultSlot = Math.min(3, Math.max(0, Math.floor((nowMs - todayMid) / (WINDOW_H * H_MS))));
     const rawSlot = q.slot !== undefined ? parseInt(q.slot, 10) : (q.offset !== undefined ? parseInt(q.offset, 10) : defaultSlot);
     const slot = Math.min(Math.max(isNaN(rawSlot) ? defaultSlot : rawSlot, 0), 7);
@@ -209,12 +204,6 @@ async function mainHandler(q) {
     const winEnd = winStart + WINDOW_H * H_MS;
     const lowBound = winStart;
 
-    // FIX FONDAMENTALE PER VIAGGIATRENO:
-    // L'endpoint /partenze e /arrivi di ViaggiaTreno accetta solo orari FUTURI (o >= ora attuale - 30 min).
-    // Se alle 18:45 gli chiediamo "Oggi alle 08:00" (perché riportavamo tutto a todayMid), ViaggiaTreno restituisce [] (array vuoto)
-    // in quanto le 08:00 di oggi sono già nel passato!
-    // Invece, se l'orario nella giornata odierna è già passato (< nowMs - 20 min), chiediamo lo stesso identico orario su DOMANI (+24h),
-    // dove ViaggiaTreno espone l'intero tabellone programmato di quella fascia oraria!
     function toBoardQueryStrings(targetMs) {
       let baseToday = targetMs;
       while (baseToday >= todayMid + DAY_MS) baseToday -= DAY_MS;
@@ -255,7 +244,6 @@ async function mainHandler(q) {
         }
         if (!cod) return { summary: t, andamento: null };
 
-        // Priorità: todayMid (dove ViaggiaTreno conserva le fermate complete di tutte le corse della giornata), poi boardDep/autoDep/ieri/domani
         const candidates = [];
         const addCand = (ms) => {
           if (ms && isFinite(ms) && !candidates.includes(ms)) candidates.push(ms);
@@ -286,9 +274,16 @@ async function mainHandler(q) {
 
     async function getBoardList(stationId, slotStrings, kind, refStart, refEnd) {
       const uniqueSlots = Array.from(new Set(slotStrings));
-      const lists = await Promise.all(
-        uniqueSlots.map((s) => fetchJson(`${VT_BASE}/${kind}/${stationId}/${encodeURIComponent(s)}`))
-      );
+      const stationIds = (stationId === "S01645" || stationId === "S01642")
+        ? ["S01645", "S01642"]
+        : [stationId];
+      const queries = [];
+      for (const stId of stationIds) {
+        for (const s of uniqueSlots) {
+          queries.push(fetchJson(`${VT_BASE}/${kind}/${stId}/${encodeURIComponent(s)}`));
+        }
+      }
+      const lists = await Promise.all(queries);
       const unique = new Map();
       for (const list of lists) {
         if (!Array.isArray(list)) continue;
@@ -312,7 +307,6 @@ async function mainHandler(q) {
         .sort((a, b) => a._sortTime - b._sortTime);
     }
 
-    // Campionamento a partire da winStart - 30min per non perdere i treni tra l'inizio della fascia (es. 18:00) e 18:30!
     const depSlots = [];
     for (let t = winStart - 30 * 60000; t < winEnd; t += 60 * 60000) {
       for (const s of toBoardQueryStrings(t)) depSlots.push(s);

@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Infotreni</title>
+  <title>Infotreni</title>
   <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#081b14" />
+  <meta name="theme-color" content="#0a120e" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Infotreni" />
@@ -30,14 +30,10 @@
       --text: #eaece9;
       --muted: #849389;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
     body {
       background-color: var(--bg);
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
       background-size: 28px 28px;
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
@@ -46,336 +42,52 @@
       padding: 20px 16px 40px;
       min-height: 100vh;
     }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 18px;
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .subtitle { color: var(--gold); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+    h1 { font-family: 'DM Serif Display', serif; font-size: 38px; font-weight: 400; line-height: 1.05; }
+    .avatar-btn, .select-wrapper, .swap-btn, .tab-btn, .pin-btn, .toggle-stops, .upcoming-card, .sheet-item, .sheet-close {
+      transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .subtitle {
-      color: var(--gold);
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-    h1 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 38px;
-      font-weight: 400;
-      line-height: 1.05;
-    }
-
-    /* Tasto Aggiorna con feedback di pressione e rotazione */
-    .avatar-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: var(--text);
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
-    }
-    .avatar-btn:active {
-      transform: scale(0.88);
-      background: rgba(201, 154, 73, 0.2);
-      border-color: var(--gold);
-    }
-    .avatar-btn.spinning {
-      border-color: var(--gold);
-      color: var(--gold);
-      background: rgba(201, 154, 73, 0.14);
-    }
-    .avatar-btn.spinning .refresh-icon {
-      animation: spin 0.75s linear infinite;
-    }
-    .refresh-icon {
-      display: inline-block;
-      line-height: 1;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-
-    /* Card Selettori Stazioni + Fascia Oraria */
-    .selector-card {
-      background: var(--card);
-      border: 1px solid var(--card-border);
-      border-radius: 18px;
-      padding: 14px;
-      margin-bottom: 14px;
-    }
-    .selector-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-      align-items: end;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .select-group label {
-      display: block;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .select-wrapper {
-      position: relative;
-      border: 1px solid rgba(201, 154, 73, 0.35);
-      border-radius: 12px;
-      background: #0d1611;
-      height: 44px;
-      display: flex;
-      align-items: center;
-    }
-    .select-display {
-      font-family: 'DM Serif Display', serif;
-      font-size: 17px;
-      color: var(--text);
-      padding: 0 26px 0 12px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      pointer-events: none;
-      width: 100%;
-    }
-    .select-wrapper select {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .select-wrapper::after {
-      content: "▾";
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--gold);
-      pointer-events: none;
-      font-size: 13px;
-    }
-    .swap-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #232419;
-      border: 1px solid rgba(201, 154, 73, 0.4);
-      color: var(--gold);
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 2px;
-    }
-    .swap-btn:active {
-      transform: scale(0.9);
-    }
-
-    /* Tabs Soluzioni / Tratta Salvata */
-    .tabs {
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 4px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      margin-bottom: 14px;
-    }
-    .tab-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--muted);
-      padding: 10px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-    }
-    .tab-btn.active {
-      background: var(--green-pill);
-      border-color: var(--green-border);
-      color: var(--text);
-    }
-    .pin-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--gold);
-      display: inline-block;
-    }
-
-    .status-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--muted);
-      font-size: 13px;
-      margin-bottom: 12px;
-      padding: 0 4px;
-    }
-    .live-dot {
-      width: 10px;
-      height: 10px;
-      background: var(--green-dot);
-      border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(72, 187, 120, 0.2);
-      transition: background 0.2s ease;
-    }
-    .live-dot.loading {
-      background: var(--gold);
-      box-shadow: 0 0 0 4px rgba(201, 154, 73, 0.25);
-    }
-
-    /* Card Grande (nella schermata Tratta Salvata) */
-    .hero-card {
-      background: linear-gradient(165deg, #1b2419 0%, #111a14 100%);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 18px;
-      margin-bottom: 20px;
-    }
-    .hero-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-      gap: 10px;
-    }
-    .leg-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin: 6px 0;
-    }
-    .section-tag {
-      font-size: 11px;
-      letter-spacing: 1.6px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-    .train-meta {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .badge-delay {
-      background: var(--danger-bg);
-      color: var(--danger-text);
-      border: 1px solid rgba(242, 139, 125, 0.25);
-      padding: 2px 9px;
-      border-radius: 99px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .badge-warn {
-      background: var(--warn-bg);
-      color: var(--warn-text);
-      border: 1px solid rgba(245, 185, 95, 0.3);
-      padding: 2px 9px;
-      border-radius: 99px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .badge-ontime {
-      background: var(--green-pill);
-      color: #72e0a0;
-      border: 1px solid var(--green-border);
-      padding: 2px 9px;
-      border-radius: 99px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .badge-neutral {
-      background: rgba(255,255,255,0.06);
-      color: var(--muted);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 2px 9px;
-      border-radius: 99px;
-      font-size: 12px;
-    }
-
-    .platform-box {
-      border: 1px solid rgba(201, 154, 73, 0.35);
-      background: rgba(10, 18, 14, 0.65);
-      border-radius: 14px;
-      padding: 8px 14px;
-      text-align: center;
-      min-width: 78px;
-      flex-shrink: 0;
-    }
-    .platform-box span {
-      display: block;
-      font-size: 10px;
-      letter-spacing: 1.4px;
-      color: var(--gold);
-      margin-bottom: 2px;
-      text-transform: uppercase;
-    }
-    .platform-box strong {
-      font-family: 'DM Serif Display', serif;
-      font-size: 28px;
-      font-weight: 400;
-      line-height: 1.05;
-    }
-
-    .transfer-banner {
-      margin: 14px 0;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px dashed rgba(201, 154, 73, 0.45);
-      background: rgba(10, 18, 14, 0.55);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .route-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 10px 0 6px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255,255,255,0.07);
-    }
-    .toggle-stops {
-      background: none;
-      border: none;
-      color: var(--gold);
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .stop-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 5px 0;
-      font-size: 13px;
-    }
+    .avatar-btn { width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--text); font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .avatar-btn:active { transform: scale(0.86); background: rgba(201, 154, 73, 0.24); border-color: var(--gold); color: var(--gold); }
+    .avatar-btn.spinning { border-color: var(--gold); color: var(--gold); background: rgba(201, 154, 73, 0.14); }
+    .avatar-btn.spinning .refresh-icon { animation: spin 0.75s linear infinite; }
+    .refresh-icon { display: inline-block; line-height: 1; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .selector-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 18px; padding: 14px; margin-bottom: 14px; }
+    .selector-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 10px; margin-bottom: 12px; }
+    .select-group label { display: block; font-size: 10px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+    .select-wrapper { position: relative; border: 1px solid rgba(201, 154, 73, 0.35); border-radius: 12px; background: #0d1611; height: 46px; display: flex; align-items: center; cursor: pointer; }
+    .select-wrapper:active { transform: scale(0.96); background: rgba(201, 154, 73, 0.16); border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201, 154, 73, 0.12); }
+    .select-display { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--text); padding: 0 28px 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; width: 100%; }
+    .select-wrapper::after { content: "▾"; position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--gold); pointer-events: none; font-size: 13px; }
+    .swap-btn { width: 42px; height: 42px; border-radius: 50%; background: #232419; border: 1px solid rgba(201, 154, 73, 0.4); color: var(--gold); font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; }
+    .swap-btn:active { transform: scale(0.84) rotate(180deg); background: rgba(201, 154, 73, 0.28); border-color: var(--gold); }
+    .tabs { background: var(--card); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 14px; gap: 4px; }
+    .tab-btn { background: transparent; border: 1px solid transparent; color: var(--muted); padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; }
+    .tab-btn:active { transform: scale(0.95); background: rgba(201, 154, 73, 0.14); color: var(--text); }
+    .tab-btn.active { background: var(--green-pill); border-color: var(--green-border); color: var(--text); }
+    .tab-btn.active:active { transform: scale(0.95); background: #23402f; }
+    .pin-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); display: inline-block; }
+    .status-bar { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 13px; margin-bottom: 12px; padding: 0 4px; }
+    .live-dot { width: 10px; height: 10px; background: var(--green-dot); border-radius: 50%; box-shadow: 0 0 0 4px rgba(72, 187, 120, 0.2); transition: background 0.2s ease; }
+    .live-dot.loading { background: var(--gold); box-shadow: 0 0 0 4px rgba(201, 154, 73, 0.25); }
+    .hero-card { background: linear-gradient(165deg, #1b2419 0%, #111a14 100%); border: 1px solid var(--card-border); border-radius: 20px; padding: 18px; margin-bottom: 20px; }
+    .hero-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px; }
+    .leg-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 6px 0; }
+    .section-tag { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .train-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 14px; }
+    .badge-delay { background: var(--danger-bg); color: var(--danger-text); border: 1px solid rgba(242, 139, 125, 0.25); padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+    .badge-warn { background: var(--warn-bg); color: var(--warn-text); border: 1px solid rgba(245, 185, 95, 0.3); padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+    .badge-ontime { background: var(--green-pill); color: #72e0a0; border: 1px solid var(--green-border); padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+    .platform-box { border: 1px solid rgba(201, 154, 73, 0.35); background: rgba(10, 18, 14, 0.65); border-radius: 14px; padding: 8px 14px; text-align: center; min-width: 78px; flex-shrink: 0; }
+    .platform-box span { display: block; font-size: 10px; letter-spacing: 1.4px; color: var(--gold); margin-bottom: 2px; text-transform: uppercase; }
+    .platform-box strong { font-family: 'DM Serif Display', serif; font-size: 28px; font-weight: 400; line-height: 1.05; }
+    .transfer-banner { margin: 14px 0; padding: 12px 14px; border-radius: 14px; border: 1px dashed rgba(201, 154, 73, 0.45); background: rgba(10, 18, 14, 0.55); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .route-header { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .toggle-stops { background: rgba(201, 154, 73, 0.1); border: 1px solid rgba(201, 154, 73, 0.3); border-radius: 8px; padding: 4px 10px; color: var(--gold); font-size: 12px; font-weight: 600; cursor: pointer; }
+    .toggle-stops:active { transform: scale(0.92); background: rgba(201, 154, 73, 0.25); border-color: var(--gold); }
+    .stop-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 13px; }
     .stop-left { display: flex; align-items: center; gap: 10px; }
     .dot { width: 9px; height: 9px; border-radius: 50%; background: #4a5750; flex-shrink: 0; }
     .dot.done { background: var(--green-dot); box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.18); }
@@ -383,117 +95,23 @@
     .time-actual { color: var(--danger-text); font-weight: 600; margin-right: 6px; }
     .time-sched { color: var(--muted); }
     .time-sched.crossed { text-decoration: line-through; opacity: 0.6; }
-
-    .backup-box {
-      margin-top: 12px;
-      padding: 9px 12px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.04);
-      border-left: 3px solid var(--gold);
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    /* Card Compatte (Lista principale Soluzioni) */
-    .upcoming-card {
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 16px;
-      padding: 14px 16px;
-      margin-bottom: 10px;
-      transition: border-color 0.2s ease;
-    }
-    .upcoming-card.is-pinned {
-      border-color: rgba(201, 154, 73, 0.55);
-      background: linear-gradient(165deg, rgba(35, 36, 25, 0.65) 0%, #121c16 100%);
-    }
-    .upcoming-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    /* Orari Partenza e Arrivo bilanciati (stessa dimensione e colore) */
-    .upcoming-time,
-    .upcoming-arr {
-      font-family: 'DM Serif Display', serif;
-      font-size: 27px;
-      color: var(--text);
-      line-height: 1;
-    }
-
-    /* Pulsante Salva Tratta minimal in linea con la palette */
-    .pin-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 11px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: all 0.18s ease;
-    }
-    .pin-btn svg {
-      width: 16px;
-      height: 16px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.9;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      transition: fill 0.18s ease, transform 0.18s ease;
-    }
-    .pin-btn:hover {
-      border-color: rgba(201, 154, 73, 0.45);
-      color: var(--gold);
-    }
-    .pin-btn.active {
-      background: var(--gold-soft);
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-    .pin-btn.active svg {
-      fill: currentColor;
-    }
-    .pin-btn:active {
-      transform: scale(0.9);
-    }
-
-    /* Orari grandi bilanciati nella card Tratta Salvata */
-    .time-pair {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 4px 0 6px;
-    }
-    .time-pair .tp-dep,
-    .time-pair .tp-arr {
-      font-family: 'DM Serif Display', serif;
-      font-size: 44px;
-      line-height: 1;
-      color: var(--text);
-    }
-    .time-pair .tp-arrow {
-      color: var(--gold);
-      font-size: 22px;
-      padding-top: 14px;
-    }
-    .time-pair .tp-label {
-      display: block;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 10px;
-      letter-spacing: 1.4px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-
+    .backup-box { margin-top: 12px; padding: 9px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); border-left: 3px solid var(--gold); font-size: 12px; color: var(--muted); }
+    .upcoming-card { background: var(--card); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; }
+    .upcoming-card:active { transform: scale(0.975); border-color: rgba(201, 154, 73, 0.5); background: #17241c; }
+    .upcoming-card.is-pinned { border-color: rgba(201, 154, 73, 0.55); background: linear-gradient(165deg, rgba(35, 36, 25, 0.65) 0%, #121c16 100%); }
+    .upcoming-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .upcoming-time, .upcoming-arr { font-family: 'DM Serif Display', serif; font-size: 27px; color: var(--text); line-height: 1; }
+    .pin-btn { width: 38px; height: 38px; border-radius: 11px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+    .pin-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; transition: fill 0.18s ease, transform 0.18s ease; }
+    .pin-btn.active { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+    .pin-btn.active svg { fill: currentColor; }
+    .pin-btn:active { transform: scale(0.84); background: rgba(201, 154, 73, 0.28); border-color: var(--gold); color: var(--gold); }
+    .time-pair { display: flex; align-items: center; gap: 12px; margin: 4px 0 6px; }
+    .time-pair .tp-dep, .time-pair .tp-arr { font-family: 'DM Serif Display', serif; font-size: 44px; line-height: 1; color: var(--text); }
+    .time-pair .tp-arrow { color: var(--gold); font-size: 22px; padding-top: 14px; }
+    .time-pair .tp-label { display: block; font-family: 'DM Sans', sans-serif; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
     .dur-line { font-size: 13px; color: var(--muted); margin: 4px 0 6px; }
+    .dir-tag { color: var(--gold); font-weight: 500; }
     .wait-time { text-align: right; white-space: nowrap; flex-shrink: 0; }
     .wait-time strong { display: block; font-family: 'DM Serif Display', serif; font-size: 26px; font-weight: 400; line-height: 1; }
     .wait-time span { font-size: 11px; color: var(--muted); }
@@ -501,825 +119,298 @@
     .up-arrow { color: var(--gold); font-size: 18px; }
     .leg-line { font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 2px 0 4px; }
     .leg-line strong { font-family: 'DM Serif Display', serif; font-weight: 400; font-size: 22px; color: var(--text); }
-    .footer-note {
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 28px;
-    }
+    .footer-note { text-align: center; color: var(--muted); font-size: 12px; margin-top: 28px; }
+    .sheet-backdrop { position: fixed; inset: 0; background: rgba(4, 9, 7, 0.72); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.22s ease; display: flex; align-items: flex-end; justify-content: center; }
+    .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+    .sheet-panel { width: 100%; max-width: 480px; background: linear-gradient(180deg, #15221a 0%, #0d1611 100%); border-top: 1px solid rgba(201, 154, 73, 0.45); border-left: 1px solid rgba(201, 154, 73, 0.2); border-right: 1px solid rgba(201, 154, 73, 0.2); border-radius: 24px 24px 0 0; padding: 12px 16px 28px; transform: translateY(100%); transition: transform 0.26s cubic-bezier(0.2, 0.85, 0.25, 1); max-height: 82vh; display: flex; flex-direction: column; box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.65); }
+    .sheet-backdrop.open .sheet-panel { transform: translateY(0); }
+    .sheet-handle { width: 40px; height: 4px; background: rgba(255, 255, 255, 0.18); border-radius: 99px; margin: 0 auto 14px; }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; padding: 0 4px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 10px; }
+    .sheet-title { font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+    .sheet-close { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--muted); width: 30px; height: 30px; border-radius: 50%; font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .sheet-close:active { transform: scale(0.85); border-color: var(--gold); color: var(--gold); }
+    .sheet-list { overflow-y: auto; display: flex; flex-direction: column; gap: 7px; padding: 2px 2px 4px; }
+    .sheet-item { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); cursor: pointer; text-align: left; color: var(--text); }
+    .sheet-item:active { transform: scale(0.97); background: rgba(201, 154, 73, 0.18); border-color: var(--gold); }
+    .sheet-item.selected { background: var(--green-pill); border-color: var(--gold); }
+    .sheet-item-main { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); line-height: 1.1; }
+    .sheet-item-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .sheet-check { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.22); display: flex; align-items: center; justify-content: center; font-size: 13px; color: transparent; flex-shrink: 0; }
+    .sheet-item.selected .sheet-check { background: var(--gold); border-color: var(--gold); color: #0a120e; font-weight: 700; }
   </style>
-<link rel="icon" type="image/png" href="/icon-192.png" />
 </head>
 <body>
-
   <div class="header">
     <div>
       <div class="subtitle">RE · RV · S5 · S6 TRENORD / TI</div>
       <h1>Infotreni</h1>
     </div>
-    <button class="avatar-btn" id="refreshBtn" onclick="refreshAll()" title="Aggiorna">
+    <button class="avatar-btn" id="refreshBtn" onclick="haptic(); refreshAll()" title="Aggiorna">
       <span class="refresh-icon">↻</span>
     </button>
   </div>
-
   <div class="selector-card">
     <div class="selector-row">
       <div class="select-group">
         <label>Partenza</label>
-        <div class="select-wrapper">
+        <div class="select-wrapper" onclick="haptic(); openPicker('from')">
           <div class="select-display" id="fromDisplay">Tortona</div>
-          <select id="fromSelect" onchange="onStationChange()"></select>
         </div>
       </div>
-
-      <button class="swap-btn" onclick="swapStations()" title="Inverti stazioni">⇄</button>
-
+      <button class="swap-btn" onclick="haptic(); swapStations()" title="Inverti stazioni">⇄</button>
       <div class="select-group">
         <label>Destinazione</label>
-        <div class="select-wrapper">
+        <div class="select-wrapper" onclick="haptic(); openPicker('to')">
           <div class="select-display" id="toDisplay">MI Rogoredo</div>
-          <select id="toSelect" onchange="onStationChange()"></select>
         </div>
       </div>
     </div>
-
     <div class="select-group">
       <label>Fascia Oraria (6 ore)</label>
-      <div class="select-wrapper">
+      <div class="select-wrapper" onclick="haptic(); openPicker('slot')">
         <div class="select-display" id="windowDisplay">Oggi 00:00 – 06:00</div>
-        <select id="windowSelect" onchange="onWindowChange()"></select>
       </div>
     </div>
   </div>
-
   <div class="tabs">
-    <button class="tab-btn active" id="tabSolutions" onclick="switchTab('solutions')">
-      Soluzioni
-    </button>
-    <button class="tab-btn" id="tabPinned" onclick="switchTab('pinned')">
-      Tratta Salvata <span id="pinBadge" class="pin-dot" style="display:none;"></span>
-    </button>
+    <button class="tab-btn active" id="tabSolutions" onclick="haptic(); switchTab('solutions')">Soluzioni</button>
+    <button class="tab-btn" id="tabPinned" onclick="haptic(); switchTab('pinned')">Tratta Salvata <span id="pinBadge" class="pin-dot" style="display:none;"></span></button>
   </div>
-
   <div class="status-bar">
     <span id="lastUpdated">Pronto</span>
     <span class="live-dot" id="liveDot"></span>
   </div>
-
   <div id="contentArea"></div>
-
   <div class="footer-note">Binari RFI · live ViaggiaTreno</div>
-
+  <div class="sheet-backdrop" id="sheetBackdrop" onclick="closePicker(event)">
+    <div class="sheet-panel" onclick="event.stopPropagation()">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <span class="sheet-title" id="sheetTitle">Seleziona</span>
+        <button class="sheet-close" onclick="haptic(); closePicker()">✕</button>
+      </div>
+      <div class="sheet-list" id="sheetList"></div>
+    </div>
+  </div>
   <script>
+    document.addEventListener("touchstart", function(){}, { passive: true });
+    function haptic(ms = 12) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch {} }
     const STATIONS = [
-      { id: "S01810", num: "1810", name: "Tortona", short: "Tortona" },
-      { id: "S01820", num: "1820", name: "Milano Rogoredo", short: "MI Rogoredo" },
-      { id: "S01701", num: "1701", name: "Milano Lambrate", short: "MI Lambrate" },
-      { id: "S01492", num: "1492", name: "Milano Forlanini", short: "MI Forlanini" },
-      { id: "S01700", num: "1700", name: "Milano Centrale", short: "MI Centrale" },
-      { id: "S01645", num: "1645", name: "Milano P. Garibaldi", short: "MI P. Garibaldi" },
-      { id: "S01322", num: "1322", name: "Milano Greco Pirelli", short: "MI Greco P." },
-      { id: "S01707", num: "1707", name: "Cassano d'Adda", short: "Cassano d'A." },
-      { id: "S01708", num: "1708", name: "Treviglio", short: "Treviglio" }
+      { id: "S01810", num: "1810", name: "Tortona", short: "Tortona", sub: "Piemonte · Linea Alessandria–Piacenza" },
+      { id: "S01820", num: "1820", name: "Milano Rogoredo", short: "MI Rogoredo", sub: "Passante · S1 S2 S12 S13 · RE · RV" },
+      { id: "S01701", num: "1701", name: "Milano Lambrate", short: "MI Lambrate", sub: "Città Studi · S9 · RE · RV" },
+      { id: "S01492", num: "1492", name: "Milano Forlanini", short: "MI Forlanini", sub: "Passante · S5 S6 S9" },
+      { id: "S01700", num: "1700", name: "Milano Centrale", short: "MI Centrale", sub: "Hub Principale · RE · RV" },
+      { id: "S01645", num: "1645", name: "Milano P. Garibaldi", short: "MI P. Garibaldi", sub: "Superficie e Passante · S5 S6 · RE" },
+      { id: "S01322", num: "1322", name: "Milano Greco Pirelli", short: "MI Greco P.", sub: "Bicocca · S7 S8 S9 S11 · RE" },
+      { id: "S01707", num: "1707", name: "Cassano d'Adda", short: "Cassano d'A.", sub: "Passante · Linea S5 S6" },
+      { id: "S01708", num: "1708", name: "Treviglio", short: "Treviglio", sub: "Capolinea S5 S6 · RE6 · RV" }
     ];
-
     const STATION_BY_ID = Object.fromEntries(STATIONS.map(s => [s.id, s]));
-
-    // 8 fasce fisse da 6 ore (4 per Oggi + 4 per Domani) da mezzanotte a mezzanotte
     const FIXED_SLOTS = [
-      { slot: 0, label: "Oggi 00:00 – 06:00" },
-      { slot: 1, label: "Oggi 06:00 – 12:00" },
-      { slot: 2, label: "Oggi 12:00 – 18:00" },
-      { slot: 3, label: "Oggi 18:00 – 24:00" },
-      { slot: 4, label: "Domani 00:00 – 06:00" },
-      { slot: 5, label: "Domani 06:00 – 12:00" },
-      { slot: 6, label: "Domani 12:00 – 18:00" },
-      { slot: 7, label: "Domani 18:00 – 24:00" }
+      { slot: 0, label: "Oggi 00:00 – 06:00", sub: "Fascia notturna / mattino presto" },
+      { slot: 1, label: "Oggi 06:00 – 12:00", sub: "Fascia mattutina" },
+      { slot: 2, label: "Oggi 12:00 – 18:00", sub: "Fascia pomeridiana" },
+      { slot: 3, label: "Oggi 18:00 – 24:00", sub: "Fascia serale" },
+      { slot: 4, label: "Domani 00:00 – 06:00", sub: "Domani · Notte / mattino presto" },
+      { slot: 5, label: "Domani 06:00 – 12:00", sub: "Domani · Mattina" },
+      { slot: 6, label: "Domani 12:00 – 18:00", sub: "Domani · Pomeriggio" },
+      { slot: 7, label: "Domani 18:00 – 24:00", sub: "Domani · Sera" }
     ];
-
     const BOOKMARK_SVG = `<svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
-
-    function getCurrentSlotIndex() {
-      const h = new Date().getHours();
-      return Math.min(3, Math.max(0, Math.floor(h / 6)));
-    }
-
+    function getCurrentSlotIndex() { const h = new Date().getHours(); return Math.min(3, Math.max(0, Math.floor(h / 6))); }
+    let selectedFrom = localStorage.getItem("vt_from") || "S01810";
+    let selectedTo = localStorage.getItem("vt_to") || "S01701";
+    if (selectedFrom === selectedTo) selectedTo = selectedFrom === "S01810" ? "S01820" : "S01810";
     let activeTab = "solutions";
     let currentSlot = getCurrentSlotIndex();
     let currentViewData = null;
     let expandedStops = { leg1: false, leg2: false };
-
-    function toTitleCase(str) {
-      return String(str || "")
-        .toLowerCase()
-        .replace(/(^|[\s'.\-/])([a-zà-ù])/g, (m, a, b) => a + b.toUpperCase());
+    function openPicker(kind) {
+      const backdrop = document.getElementById("sheetBackdrop");
+      const titleEl = document.getElementById("sheetTitle");
+      const listEl = document.getElementById("sheetList");
+      if (kind === "from") {
+        titleEl.textContent = "Stazione di Partenza";
+        listEl.innerHTML = STATIONS.map(s => `<div class="sheet-item ${s.id === selectedFrom ? 'selected' : ''}" onclick="selectFromStation('${s.id}')"><div><div class="sheet-item-main">${s.name}</div><div class="sheet-item-sub">${s.sub}</div></div><div class="sheet-check">✓</div></div>`).join("");
+      } else if (kind === "to") {
+        titleEl.textContent = "Stazione di Destinazione";
+        listEl.innerHTML = STATIONS.filter(s => s.id !== selectedFrom).map(s => `<div class="sheet-item ${s.id === selectedTo ? 'selected' : ''}" onclick="selectToStation('${s.id}')"><div><div class="sheet-item-main">${s.name}</div><div class="sheet-item-sub">${s.sub}</div></div><div class="sheet-check">✓</div></div>`).join("");
+      } else if (kind === "slot") {
+        titleEl.textContent = "Seleziona Fascia Oraria";
+        listEl.innerHTML = FIXED_SLOTS.map(s => `<div class="sheet-item ${s.slot === currentSlot ? 'selected' : ''}" onclick="selectTimeSlot(${s.slot})"><div><div class="sheet-item-main">${s.label}</div><div class="sheet-item-sub">${s.sub}</div></div><div class="sheet-check">✓</div></div>`).join("");
+      }
+      backdrop.classList.add("open");
     }
-
+    function closePicker() { document.getElementById("sheetBackdrop").classList.remove("open"); }
+    function selectFromStation(id) {
+      haptic(15); selectedFrom = id;
+      if (selectedTo === selectedFrom) { const fb = STATIONS.find(s => s.id !== selectedFrom); if (fb) selectedTo = fb.id; }
+      syncSelectDisplays(); closePicker(); if (activeTab === "pinned") switchTab("solutions"); loadTrains();
+    }
+    function selectToStation(id) { haptic(15); selectedTo = id; syncSelectDisplays(); closePicker(); if (activeTab === "pinned") switchTab("solutions"); loadTrains(); }
+    function selectTimeSlot(slotIdx) { haptic(15); currentSlot = slotIdx; syncSelectDisplays(); closePicker(); if (activeTab === "pinned") switchTab("solutions"); loadTrains(); }
+    function toTitleCase(str) { return String(str || "").toLowerCase().replace(/(^|[\s'.\-/])([a-zà-ù])/g, (m, a, b) => a + b.toUpperCase()); }
     function abbrStation(name) {
       if (!name) return "";
       const raw = String(name).trim();
-      const match = STATIONS.find(
-        st => st.name.toLowerCase() === raw.toLowerCase() || st.short.toLowerCase() === raw.toLowerCase()
-      );
+      const match = STATIONS.find(st => st.name.toLowerCase() === raw.toLowerCase() || st.short.toLowerCase() === raw.toLowerCase());
       if (match) return match.short;
-
-      const titled = toTitleCase(raw);
-
-      return titled
-        .replace(/^Milano\s+Porta\s+/i, "MI P. ")
-        .replace(/^Milano\s+P\.\s*/i, "MI P. ")
-        .replace(/^Milano\s+Greco\s+Pirelli/i, "MI Greco P.")
-        .replace(/^Milano\s+/i, "MI ")
-        .replace(/^Cassano\s+D'adda/i, "Cassano d'A.")
-        .replace(/\bD'([A-ZÀ-Ù])/g, (m, c) => "d'" + c)
-        .replace(/\bDi\b/g, "di")
-        .replace(/\bDel\b/g, "del")
-        .replace(/\bDella\b/g, "della")
-        .replace(/\bPorta\s+/gi, "P. ")
-        .replace(/\bSan\s+/gi, "S. ")
-        .replace(/\bSanta\s+/gi, "S.ta ");
+      return toTitleCase(raw).replace(/^Milano\s+Porta\s+/i, "MI P. ").replace(/^Milano\s+P\.\s*/i, "MI P. ").replace(/^Milano\s+Greco\s+Pirelli/i, "MI Greco P.").replace(/^Milano\s+/i, "MI ").replace(/^Cassano\s+D'adda/i, "Cassano d'A.").replace(/\bD'([A-ZÀ-Ù])/g, (m, c) => "d'" + c).replace(/\bDi\b/g, "di").replace(/\bDel\b/g, "del").replace(/\bDella\b/g, "della").replace(/\bPorta\s+/gi, "P. ").replace(/\bSan\s+/gi, "S. ").replace(/\bSanta\s+/gi, "S.ta ");
     }
-
-    function fmtTime(msOrIso) {
-      if (!msOrIso) return "--:--";
-      const d = new Date(msOrIso);
-      if (isNaN(d.getTime())) return "--:--";
-      return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-    }
-
-    function fmtDur(min) {
-      if (min < 60) return `${min} min`;
-      return `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}min`;
-    }
-
-    function durationLine(depMs, arrMs, delayMin) {
-      const dur = Math.round((arrMs - depMs) / 60000);
-      if (!isFinite(dur) || dur <= 0) return "";
-      return `${fmtDur(dur)}${delayMin > 0 ? ` + ${delayMin} min rit.` : ""}`;
-    }
-
-    function delayBadge(r) {
-      return `<span class="${r > 0 ? 'badge-delay' : 'badge-ontime'}">${r > 0 ? `+${r} min` : 'In orario'}</span>`;
-    }
-
+    function fmtTime(msOrIso) { if (!msOrIso) return "--:--"; const d = new Date(msOrIso); if (isNaN(d.getTime())) return "--:--"; return d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }); }
+    function fmtDur(min) { return min < 60 ? `${min} min` : `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}min`; }
+    function durationLine(depMs, arrMs, delayMin) { const dur = Math.round((arrMs - depMs) / 60000); if (!isFinite(dur) || dur <= 0) return ""; return `${fmtDur(dur)}${delayMin > 0 ? ` + ${delayMin} min rit.` : ""}`; }
+    function destLabel(dest) { return dest ? ` <span class="dir-tag">per ${abbrStation(dest)}</span>` : ""; }
+    function delayBadge(r) { return `<span class="${r > 0 ? 'badge-delay' : 'badge-ontime'}">${r > 0 ? `+${r} min` : 'In orario'}</span>`; }
     function setLoadingState(isLoading, message) {
-      const btn = document.getElementById("refreshBtn");
-      const dot = document.getElementById("liveDot");
-      const label = document.getElementById("lastUpdated");
-      if (isLoading) {
-        btn.classList.add("spinning");
-        dot.classList.add("loading");
-        label.textContent = message || "Aggiornamento in corso...";
-      } else {
-        btn.classList.remove("spinning");
-        dot.classList.remove("loading");
-        label.textContent = message || `Aggiornato alle ${fmtTime(Date.now())} ✓`;
-      }
+      const btn = document.getElementById("refreshBtn"), dot = document.getElementById("liveDot"), label = document.getElementById("lastUpdated");
+      if (isLoading) { btn.classList.add("spinning"); dot.classList.add("loading"); label.textContent = message || "Aggiornamento in corso..."; }
+      else { btn.classList.remove("spinning"); dot.classList.remove("loading"); label.textContent = message || `Aggiornato alle ${fmtTime(Date.now())} ✓`; }
     }
-
-    function getPinned() {
-      try {
-        const raw = localStorage.getItem("vt_pinned_item");
-        return raw ? JSON.parse(raw) : null;
-      } catch {
-        return null;
-      }
-    }
-
-    function savePinned(item) {
-      if (!item) {
-        localStorage.removeItem("vt_pinned_item");
-      } else {
-        localStorage.setItem("vt_pinned_item", JSON.stringify(item));
-      }
-      updatePinBadge();
-    }
-
-    function getItemKey(item, kind) {
-      if (!item) return "";
-      if (kind === "direct" || item.numeroTreno) {
-        return `dir-${item.numeroTreno}-${item.orarioPartenza}`;
-      }
-      return `conn-${item.leg1.numeroTreno}-${item.leg2.numeroTreno}-${item.leg1.orarioPartenza}`;
-    }
-
-    function updatePinBadge() {
-      const pinned = getPinned();
-      const badge = document.getElementById("pinBadge");
-      badge.style.display = pinned ? "inline-block" : "none";
-    }
-
-    function togglePinByIndex(idx) {
+    function getPinned() { try { const raw = localStorage.getItem("vt_pinned_item"); return raw ? JSON.parse(raw) : null; } catch { return null; } }
+    function savePinned(item) { if (!item) localStorage.removeItem("vt_pinned_item"); else localStorage.setItem("vt_pinned_item", JSON.stringify(item)); updatePinBadge(); }
+    function getItemKey(item, kind) { if (!item) return ""; return (kind === "direct" || item.numeroTreno) ? `dir-${item.numeroTreno}-${item.orarioPartenza}` : `conn-${item.leg1.numeroTreno}-${item.leg2.numeroTreno}-${item.leg1.orarioPartenza}`; }
+    function updatePinBadge() { document.getElementById("pinBadge").style.display = getPinned() ? "inline-block" : "none"; }
+    function togglePinByIndex(idx, ev) {
+      if (ev) ev.stopPropagation(); haptic(18);
       if (!currentViewData || !currentViewData.items[idx]) return;
-      const item = currentViewData.items[idx];
-      const kind = currentViewData.type;
-      const key = getItemKey(item, kind);
-      const currentPinned = getPinned();
-
-      if (currentPinned && currentPinned.key === key) {
-        savePinned(null);
-        renderCurrentView();
-      } else {
-        expandedStops = { leg1: false, leg2: false };
-        savePinned({ key, kind, data: item, pinnedAt: Date.now() });
-        switchTab("pinned");
-        refreshPinnedLive();
-      }
+      const item = currentViewData.items[idx], kind = currentViewData.type, key = getItemKey(item, kind), currentPinned = getPinned();
+      if (currentPinned && currentPinned.key === key) { savePinned(null); renderCurrentView(); }
+      else { expandedStops = { leg1: false, leg2: false }; savePinned({ key, kind, data: item, pinnedAt: Date.now() }); switchTab("pinned"); refreshPinnedLive(); }
     }
-
-    function unpinCurrent() {
-      savePinned(null);
-      renderCurrentView();
-    }
-
+    function unpinCurrent() { haptic(15); savePinned(null); renderCurrentView(); }
     function switchTab(tab) {
       activeTab = tab;
       document.getElementById("tabSolutions").classList.toggle("active", tab === "solutions");
       document.getElementById("tabPinned").classList.toggle("active", tab === "pinned");
       renderCurrentView();
     }
-
     async function fetchVT(endpoint, asText = false) {
-      try {
-        const res = await fetch(`/api/vt?endpoint=${encodeURIComponent(endpoint)}`);
-        if (!res.ok) return null;
-        const text = await res.text();
-        if (!text || text.trim().startsWith("<")) return null;
-        return asText ? text : JSON.parse(text);
-      } catch {
-        return null;
-      }
+      try { const res = await fetch(`/api/vt?endpoint=${encodeURIComponent(endpoint)}`); if (!res.ok) return null; const text = await res.text(); if (!text || text.trim().startsWith("<")) return null; return asText ? text : JSON.parse(text); } catch { return null; }
     }
-
     function findStopIdx(fermate, stationId, stationNameHint) {
       if (!Array.isArray(fermate)) return -1;
-      if (stationId) {
-        const idx = fermate.findIndex(f =>
-          f.id === stationId ||
-          (stationId === "S01645" && f.id === "S01642") ||
-          (stationId === "S01642" && f.id === "S01645")
-        );
-        if (idx !== -1) return idx;
-      }
-      if (stationNameHint) {
-        const clean = stationNameHint.toUpperCase()
-          .replace("MILANO ", "")
-          .replace("MI ", "")
-          .replace("PORTA ", "")
-          .replace("P. ", "")
-          .replace("GRECO P.", "GRECO")
-          .replace("D'ADDA", "")
-          .replace("D'A.", "")
-          .trim();
-        return fermate.findIndex(f => (f.stazione || "").toUpperCase().includes(clean));
-      }
+      if (stationId) { const idx = fermate.findIndex(f => f.id === stationId || (stationId === "S01645" && f.id === "S01642") || (stationId === "S01642" && f.id === "S01645")); if (idx !== -1) return idx; }
+      if (stationNameHint) { const clean = stationNameHint.toUpperCase().replace("MILANO ", "").replace("MI ", "").replace("PORTA ", "").replace("P. ", "").replace("GRECO P.", "GRECO").replace("D'ADDA", "").replace("D'A.", "").trim(); return fermate.findIndex(f => (f.stazione || "").toUpperCase().includes(clean)); }
       return -1;
     }
-
     async function fetchLiveAndamentoForLeg(leg) {
       if (leg.isFutureDay && leg.orarioPartenza > Date.now() + 2 * 3600000) return null;
-      const numStr = String(leg.numeroTreno).trim();
-      let cod = leg.codOrigine;
-      let depTs = leg.dataPartenzaTreno;
-
+      const numStr = String(leg.numeroTreno).trim(); let cod = leg.codOrigine, depTs = leg.dataPartenzaTreno;
       if (!cod || !depTs) {
         const autoRaw = await fetchVT(`/cercaNumeroTrenoTrenoAutocomplete/${numStr}`, true);
-        if (autoRaw) {
-          const firstLine = autoRaw.trim().split("\n")[0];
-          if (firstLine && firstLine.includes("|")) {
-            const parts = firstLine.split("|")[1].trim().split("-");
-            if (parts.length >= 3) {
-              cod = parts[1];
-              depTs = parts[2];
-            }
-          }
-        }
+        if (autoRaw) { const firstLine = autoRaw.trim().split("\n")[0]; if (firstLine && firstLine.includes("|")) { const parts = firstLine.split("|")[1].trim().split("-"); if (parts.length >= 3) { cod = parts[1]; depTs = parts[2]; } } }
       }
       if (!cod || !depTs) return null;
       return await fetchVT(`/andamentoTreno/${cod}/${numStr}/${depTs}`, false);
     }
-
     function applyLiveToLeg(leg, and) {
       if (!and || !Array.isArray(and.fermate)) return leg;
       if (leg.isFutureDay && leg.orarioPartenza > Date.now() + 2 * 3600000) return leg;
-
-      const idxA = findStopIdx(and.fermate, leg.fromId, leg.fromName);
-      const idxB = findStopIdx(and.fermate, leg.toId, leg.toName);
-
-      const stopA = idxA !== -1 ? and.fermate[idxA] : null;
-      const stopB = idxB !== -1 ? and.fermate[idxB] : null;
-
+      const idxA = findStopIdx(and.fermate, leg.fromId, leg.fromName), idxB = findStopIdx(and.fermate, leg.toId, leg.toName);
+      const stopA = idxA !== -1 ? and.fermate[idxA] : null, stopB = idxB !== -1 ? and.fermate[idxB] : null;
       const ritardo = and.ritardo ?? leg.ritardo ?? 0;
-      const binPartenza =
-        stopA?.binarioEffettivoPartenzaDescrizione ||
-        stopA?.binarioProgrammatoPartenzaDescrizione ||
-        leg.binarioPartenza ||
-        "-";
-      const binArrivo =
-        stopB?.binarioEffettivoArrivoDescrizione ||
-        stopB?.binarioProgrammatoArrivoDescrizione ||
-        leg.binarioArrivo ||
-        "-";
-
-      const sliceStart = idxA !== -1 ? idxA : 0;
-      const sliceEnd = idxB !== -1 ? idxB + 1 : and.fermate.length;
-      const rawSlice = and.fermate.slice(sliceStart, sliceEnd);
-
-      const fermate = rawSlice.map((f, i) => {
-        const prevDone = i > 0 && rawSlice[i - 1].actualFermataType === 1;
-        const currDone = f.actualFermataType === 1;
-        return {
-          stazione: abbrStation(f.stazione),
-          programmata: f.partenza_teorica || f.arrivo_teorico || f.programmata,
-          effettiva: f.partenzaReale || f.arrivoReale || null,
-          ritardo: f.ritardoPartenza ?? f.ritardoArrivo ?? 0,
-          effettuata: currDone,
-          inArrivo: !currDone && prevDone
-        };
-      });
-
-      return {
-        ...leg,
-        origine: abbrStation(and.origine || leg.origine),
-        destinazione: abbrStation(and.destinazione || leg.destinazione),
-        ritardo,
-        binarioPartenza: binPartenza,
-        binarioArrivo: binArrivo,
-        orarioPartenzaStimato: stopA?.partenzaReale || (leg.orarioPartenza + Math.max(0, ritardo) * 60000),
-        orarioArrivoStimato: stopB?.arrivoReale || (leg.orarioArrivo + Math.max(0, ritardo) * 60000),
-        arrivatoADestinazione: stopB ? stopB.actualFermataType === 1 : Boolean(and.arrivato),
-        fermate
-      };
+      const binPartenza = stopA?.binarioEffettivoPartenzaDescrizione || stopA?.binarioProgrammatoPartenzaDescrizione || leg.binarioPartenza || "-";
+      const binArrivo = stopB?.binarioEffettivoArrivoDescrizione || stopB?.binarioProgrammatoArrivoDescrizione || leg.binarioArrivo || "-";
+      const rawSlice = and.fermate.slice(idxA !== -1 ? idxA : 0, idxB !== -1 ? idxB + 1 : and.fermate.length);
+      const fermate = rawSlice.map((f, i) => ({
+        stazione: abbrStation(f.stazione),
+        programmata: f.partenza_teorica || f.arrivo_teorico || f.programmata,
+        effettiva: f.partenzaReale || f.arrivoReale || null,
+        ritardo: f.ritardoPartenza ?? f.ritardoArrivo ?? 0,
+        effettuata: f.actualFermataType === 1,
+        inArrivo: f.actualFermataType !== 1 && i > 0 && rawSlice[i - 1].actualFermataType === 1
+      }));
+      return { ...leg, origine: abbrStation(and.origine || leg.origine), destinazione: abbrStation(and.destinazione || leg.destinazione), ritardo, binarioPartenza: binPartenza, binarioArrivo: binArrivo, orarioPartenzaStimato: stopA?.partenzaReale || (leg.orarioPartenza + Math.max(0, ritardo) * 60000), orarioArrivoStimato: stopB?.arrivoReale || (leg.orarioArrivo + Math.max(0, ritardo) * 60000), arrivatoADestinazione: stopB ? stopB.actualFermataType === 1 : Boolean(and.arrivato), fermate };
     }
-
     async function refreshPinnedLive() {
-      const pinned = getPinned();
-      if (!pinned) return;
-
+      const pinned = getPinned(); if (!pinned) return;
       setLoadingState(true, "Aggiornamento tratta salvata...");
       try {
-        if (pinned.kind === "direct") {
-          const and = await fetchLiveAndamentoForLeg(pinned.data);
-          if (and) {
-            pinned.data = applyLiveToLeg(pinned.data, and);
-            savePinned(pinned);
-          }
-        } else {
-          const [and1, and2] = await Promise.all([
-            fetchLiveAndamentoForLeg(pinned.data.leg1),
-            fetchLiveAndamentoForLeg(pinned.data.leg2)
-          ]);
+        if (pinned.kind === "direct") { const and = await fetchLiveAndamentoForLeg(pinned.data); if (and) { pinned.data = applyLiveToLeg(pinned.data, and); savePinned(pinned); } }
+        else {
+          const [and1, and2] = await Promise.all([fetchLiveAndamentoForLeg(pinned.data.leg1), fetchLiveAndamentoForLeg(pinned.data.leg2)]);
           if (and1) pinned.data.leg1 = applyLiveToLeg(pinned.data.leg1, and1);
           if (and2) pinned.data.leg2 = applyLiveToLeg(pinned.data.leg2, and2);
-          pinned.data.waitRealMin = Math.round(
-            (pinned.data.leg2.orarioPartenzaStimato - pinned.data.leg1.orarioArrivoStimato) / 60000
-          );
+          pinned.data.waitRealMin = Math.round((pinned.data.leg2.orarioPartenzaStimato - pinned.data.leg1.orarioArrivoStimato) / 60000);
           savePinned(pinned);
         }
-        setLoadingState(false);
-        renderCurrentView();
-      } catch {
-        setLoadingState(false, "Aggiornato");
-      }
+        setLoadingState(false); renderCurrentView();
+      } catch { setLoadingState(false, "Aggiornato"); }
     }
-
-    function initSelectors() {
-      const fromEl = document.getElementById("fromSelect");
-      fromEl.innerHTML = STATIONS.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
-      fromEl.value = localStorage.getItem("vt_from") || "S01810";
-      populateToSelect(localStorage.getItem("vt_to") || "S01708");
-      syncSelectDisplays();
-    }
-
-    function populateToSelect(preferredTo) {
-      const fromId = document.getElementById("fromSelect").value;
-      const toEl = document.getElementById("toSelect");
-      const valid = STATIONS.filter(s => s.id !== fromId);
-      toEl.innerHTML = valid.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
-      if (valid.some(s => s.id === preferredTo)) toEl.value = preferredTo;
-    }
-
+    function windowLabel(slotIdx) { const found = FIXED_SLOTS.find(s => s.slot === slotIdx); return found ? found.label : FIXED_SLOTS[0].label; }
     function syncSelectDisplays() {
-      const fromId = document.getElementById("fromSelect").value;
-      const toId = document.getElementById("toSelect").value;
-      document.getElementById("fromDisplay").textContent = STATION_BY_ID[fromId]?.short || "";
-      document.getElementById("toDisplay").textContent = STATION_BY_ID[toId]?.short || "";
-    }
-
-    function windowLabel(slotIdx) {
-      const found = FIXED_SLOTS.find(s => s.slot === slotIdx);
-      return found ? found.label : FIXED_SLOTS[0].label;
-    }
-
-    function renderWindowSelect() {
-      const sel = document.getElementById("windowSelect");
-      sel.innerHTML = FIXED_SLOTS.map(
-        s => `<option value="${s.slot}" ${s.slot === currentSlot ? "selected" : ""}>${s.label}</option>`
-      ).join("");
+      document.getElementById("fromDisplay").textContent = STATION_BY_ID[selectedFrom]?.short || "";
+      document.getElementById("toDisplay").textContent = STATION_BY_ID[selectedTo]?.short || "";
       document.getElementById("windowDisplay").textContent = windowLabel(currentSlot);
     }
-
-    function onWindowChange() {
-      currentSlot = parseInt(document.getElementById("windowSelect").value, 10) || 0;
-      document.getElementById("windowDisplay").textContent = windowLabel(currentSlot);
-      if (activeTab === "pinned") switchTab("solutions");
-      loadTrains();
-    }
-
-    function refreshAll() {
-      renderWindowSelect();
-      if (activeTab === "pinned" && getPinned()) {
-        refreshPinnedLive();
-      } else {
-        loadTrains();
-      }
-    }
-
-    function onStationChange() {
-      populateToSelect(document.getElementById("toSelect").value);
-      syncSelectDisplays();
-      if (activeTab === "pinned") switchTab("solutions");
-      loadTrains();
-    }
-
-    function swapStations() {
-      const fromEl = document.getElementById("fromSelect");
-      const toEl = document.getElementById("toSelect");
-      const oldFrom = fromEl.value;
-      const oldTo = toEl.value;
-      fromEl.value = oldTo;
-      populateToSelect(oldFrom);
-      syncSelectDisplays();
-      if (activeTab === "pinned") switchTab("solutions");
-      loadTrains();
-    }
-
+    function refreshAll() { syncSelectDisplays(); if (activeTab === "pinned" && getPinned()) refreshPinnedLive(); else loadTrains(); }
+    function swapStations() { const oldFrom = selectedFrom; selectedFrom = selectedTo; selectedTo = oldFrom; syncSelectDisplays(); if (activeTab === "pinned") switchTab("solutions"); loadTrains(); }
     async function loadTrains() {
-      const from = document.getElementById("fromSelect").value;
-      const to = document.getElementById("toSelect").value;
-      localStorage.setItem("vt_from", from);
-      localStorage.setItem("vt_to", to);
-
+      localStorage.setItem("vt_from", selectedFrom); localStorage.setItem("vt_to", selectedTo);
       setLoadingState(true, "Ricerca soluzioni su ViaggiaTreno...");
       const content = document.getElementById("contentArea");
-      if (activeTab === "solutions") {
-        content.innerHTML = `<div class="upcoming-card">Ricerca soluzioni in corso...</div>`;
-      }
-
+      if (activeTab === "solutions") content.innerHTML = `<div class="upcoming-card">Ricerca soluzioni in corso...</div>`;
       try {
-        // Passiamo sia slot che offset=slot per compatibilità totale
-        const qs = new URLSearchParams({ from, to, slot: currentSlot, offset: currentSlot });
-        const res = await fetch(`/api/treni?${qs}`);
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { throw new Error(`Risposta non valida (HTTP ${res.status})`); }
+        const qs = new URLSearchParams({ from: selectedFrom, to: selectedTo, slot: currentSlot, offset: currentSlot });
+        const res = await fetch(`/api/treni?${qs}`); const text = await res.text();
+        let data; try { data = JSON.parse(text); } catch { throw new Error(`Risposta non valida (HTTP ${res.status})`); }
         if (!res.ok) throw new Error(data.details || data.error || `HTTP ${res.status}`);
-
-        if (data.type === "direct") {
-          currentViewData = { type: "direct", items: data.trains || [] };
-        } else {
-          currentViewData = { type: "connections", items: data.connections || [], stats: data.stats || null };
-        }
-
+        currentViewData = data.type === "direct" ? { type: "direct", items: data.trains || [] } : { type: "connections", items: data.connections || [], stats: data.stats || null };
         const pinned = getPinned();
-        if (pinned) {
-          const match = currentViewData.items.find(it => getItemKey(it, currentViewData.type) === pinned.key);
-          if (match) {
-            pinned.data = match;
-            savePinned(pinned);
-          }
-        }
-
-        setLoadingState(false);
-        renderCurrentView();
+        if (pinned) { const match = currentViewData.items.find(it => getItemKey(it, currentViewData.type) === pinned.key); if (match) { pinned.data = match; savePinned(pinned); } }
+        setLoadingState(false); renderCurrentView();
       } catch (e) {
         setLoadingState(false, "Errore di caricamento");
-        if (activeTab === "solutions") {
-          content.innerHTML = `<div class="upcoming-card">Errore: ${e.message}. Tocca ↻ per riprovare.</div>`;
-        }
+        if (activeTab === "solutions") content.innerHTML = `<div class="upcoming-card">Errore: ${e.message}. Tocca ↻ per riprovare.</div>`;
       }
     }
-
     function renderCurrentView() {
       updatePinBadge();
-      if (activeTab === "pinned") {
-        renderPinnedTab();
-        return;
-      }
+      if (activeTab === "pinned") { renderPinnedTab(); return; }
       if (!currentViewData) return;
-      if (currentViewData.type === "direct") {
-        renderDirectList(currentViewData.items);
-      } else {
-        renderConnectionsList(currentViewData.items);
-      }
+      if (currentViewData.type === "direct") renderDirectList(currentViewData.items); else renderConnectionsList(currentViewData.items);
     }
-
-    // SCHERMATA 1: Tutte le soluzioni in formato compatto con icona minimal
     function renderDirectList(trains) {
       const content = document.getElementById("contentArea");
-      if (!trains.length) {
-        content.innerHTML = `<div class="upcoming-card">Nessun treno trovato nella fascia <strong>${windowLabel(currentSlot)}</strong>.</div>`;
-        return;
-      }
-
+      if (!trains.length) { content.innerHTML = `<div class="upcoming-card">Nessun treno trovato nella fascia <strong>${windowLabel(currentSlot)}</strong>.</div>`; return; }
       const pinned = getPinned();
-
-      content.innerHTML = `
-        <div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni dirette (${trains.length})</div>
-        ${trains.map((t, idx) => {
-          const isPinned = pinned && pinned.key === getItemKey(t, "direct");
-          return `
-            <div class="upcoming-card ${isPinned ? 'is-pinned' : ''}">
-              <div class="upcoming-top">
-                <div style="flex:1;cursor:pointer;" onclick="togglePinByIndex(${idx})">
-                  <div class="up-pair">
-                    <span class="upcoming-time">${fmtTime(t.orarioPartenza)}</span>
-                    <span class="up-arrow">→</span>
-                    <span class="upcoming-arr">${fmtTime(t.orarioArrivoStimato)}</span>
-                    ${delayBadge(t.ritardo)}
-                  </div>
-                  <div class="dur-line" style="margin-bottom:0;">
-                    ${durationLine(t.orarioPartenza, t.orarioArrivo, t.ritardo)} · ${t.categoria} ${t.numeroTreno}
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div style="text-align:right;">
-                    <span style="color:var(--muted);font-size:11px;display:block;">BIN.</span>
-                    <strong style="font-family:'DM Serif Display',serif;font-size:22px;">${t.binarioPartenza}</strong>
-                  </div>
-                  <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx})" title="Salva tratta">
-                    ${BOOKMARK_SVG}
-                  </button>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join("")}
-      `;
+      content.innerHTML = `<div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni dirette (${trains.length})</div>` + trains.map((t, idx) => {
+        const isPinned = pinned && pinned.key === getItemKey(t, "direct");
+        return `<div class="upcoming-card ${isPinned ? 'is-pinned' : ''}" onclick="togglePinByIndex(${idx}, event)"><div class="upcoming-top"><div style="flex:1;"><div class="up-pair"><span class="upcoming-time">${fmtTime(t.orarioPartenza)}</span><span class="up-arrow">→</span><span class="upcoming-arr">${fmtTime(t.orarioArrivoStimato)}</span>${delayBadge(t.ritardo)}</div><div class="dur-line" style="margin-bottom:0;">${durationLine(t.orarioPartenza, t.orarioArrivo, t.ritardo)} · ${t.categoria} ${t.numeroTreno}${destLabel(t.destinazione)}</div></div><div style="display:flex;align-items:center;gap:12px;"><div style="text-align:right;"><span style="color:var(--muted);font-size:11px;display:block;">BIN.</span><strong style="font-family:'DM Serif Display',serif;font-size:22px;">${t.binarioPartenza}</strong></div><button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx}, event)" title="Salva tratta">${BOOKMARK_SVG}</button></div></div></div>`;
+      }).join("");
     }
-
     function renderConnectionsList(connections) {
       const content = document.getElementById("contentArea");
-      if (!connections.length) {
-        content.innerHTML = `<div class="upcoming-card">Nessuna soluzione trovata nella fascia <strong>${windowLabel(currentSlot)}</strong>.</div>`;
-        return;
-      }
-
+      if (!connections.length) { content.innerHTML = `<div class="upcoming-card">Nessuna soluzione trovata nella fascia <strong>${windowLabel(currentSlot)}</strong>.</div>`; return; }
       const pinned = getPinned();
-
-      content.innerHTML = `
-        <div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni con cambio (${connections.length})</div>
-        ${connections.map((c, idx) => {
-          const isPinned = pinned && pinned.key === getItemKey(c, "connections");
-          const totDelay = Math.max(0, Math.round((c.leg2.orarioArrivoStimato - c.leg2.orarioArrivo) / 60000));
-          return `
-            <div class="upcoming-card ${isPinned ? 'is-pinned' : ''}">
-              <div class="upcoming-top">
-                <div style="flex:1;cursor:pointer;" onclick="togglePinByIndex(${idx})">
-                  <div class="up-pair">
-                    <span class="upcoming-time">${fmtTime(c.leg1.orarioPartenza)}</span>
-                    <span class="up-arrow">→</span>
-                    <span class="upcoming-arr">${fmtTime(c.leg2.orarioArrivoStimato)}</span>
-                    ${delayBadge(c.leg1.ritardo)}
-                  </div>
-                  <div class="dur-line" style="margin-bottom:0;">
-                    ${durationLine(c.leg1.orarioPartenza, c.leg2.orarioArrivo, totDelay)}
-                    · Treno ${c.leg1.numeroTreno} + ${c.leg2.numeroTreno}
-                  </div>
-                  <div style="font-size:12px;color:var(--gold);margin-top:3px;">
-                    Cambio a ${abbrStation(c.hubArrivalName)} (${c.waitRealMin} min · bin. ${c.leg1.binarioArrivo} → ${c.leg2.binarioPartenza})
-                  </div>
-                </div>
-                <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx})" title="Salva tratta">
-                  ${BOOKMARK_SVG}
-                </button>
-              </div>
-            </div>
-          `;
-        }).join("")}
-      `;
+      content.innerHTML = `<div class="section-tag" style="margin:0 0 10px 4px;">Soluzioni con cambio (${connections.length})</div>` + connections.map((c, idx) => {
+        const isPinned = pinned && pinned.key === getItemKey(c, "connections");
+        const totDelay = Math.max(0, Math.round((c.leg2.orarioArrivoStimato - c.leg2.orarioArrivo) / 60000));
+        return `<div class="upcoming-card ${isPinned ? 'is-pinned' : ''}" onclick="togglePinByIndex(${idx}, event)"><div class="upcoming-top"><div style="flex:1;"><div class="up-pair"><span class="upcoming-time">${fmtTime(c.leg1.orarioPartenza)}</span><span class="up-arrow">→</span><span class="upcoming-arr">${fmtTime(c.leg2.orarioArrivoStimato)}</span>${delayBadge(c.leg1.ritardo)}</div><div class="dur-line" style="margin-bottom:0;">${durationLine(c.leg1.orarioPartenza, c.leg2.orarioArrivo, totDelay)} · ${c.leg1.categoria} ${c.leg1.numeroTreno}${destLabel(c.leg1.destinazione)} + ${c.leg2.categoria} ${c.leg2.numeroTreno}${destLabel(c.leg2.destinazione)}</div><div style="font-size:12px;color:var(--gold);margin-top:3px;">Cambio a ${abbrStation(c.hubArrivalName)} (${c.waitRealMin} min · bin. ${c.leg1.binarioArrivo} → ${c.leg2.binarioPartenza})</div></div><button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePinByIndex(${idx}, event)" title="Salva tratta">${BOOKMARK_SVG}</button></div></div>`;
+      }).join("");
     }
-
-    // SCHERMATA 2: Dettaglio Tratta Salvata
     function renderPinnedTab() {
-      const content = document.getElementById("contentArea");
-      const pinned = getPinned();
-
+      const content = document.getElementById("contentArea"), pinned = getPinned();
       if (!pinned || !pinned.data) {
-        content.innerHTML = `
-          <div class="upcoming-card" style="text-align:center;padding:30px 20px;">
-            <div style="color:var(--gold);margin-bottom:10px;display:flex;justify-content:center;">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-              </svg>
-            </div>
-            <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Nessuna tratta salvata</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.45;">
-              Seleziona l'icona di salvataggio accanto a una soluzione nella scheda <strong>Soluzioni</strong> per monitorarne l'andamento e le fermate in tempo reale.
-            </div>
-          </div>
-        `;
+        content.innerHTML = `<div class="upcoming-card" style="text-align:center;padding:30px 20px;"><div style="color:var(--gold);margin-bottom:10px;display:flex;justify-content:center;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg></div><div style="font-size:16px;font-weight:600;margin-bottom:6px;">Nessuna tratta salvata</div><div style="font-size:13px;color:var(--muted);line-height:1.45;">Seleziona l'icona di salvataggio accanto a una soluzione nella scheda <strong>Soluzioni</strong> per monitorarne l'andamento e le fermate in tempo reale.</div></div>`;
         return;
       }
-
       if (pinned.kind === "direct") {
-        const next = pinned.data;
-        const stops = next.fermate || [];
-        const stopsToShow = expandedStops.leg1 ? stops : stops.slice(0, 6);
+        const next = pinned.data, stops = next.fermate || [], stopsToShow = expandedStops.leg1 ? stops : stops.slice(0, 6);
         const binArr = next.binarioArrivo && next.binarioArrivo !== "-" ? ` · bin. ${next.binarioArrivo}` : "";
-
-        content.innerHTML = `
-          <div class="hero-card">
-            <div class="hero-top">
-              <div>
-                <div class="section-tag" style="color:var(--gold);">Tratta Salvata · ${abbrStation(next.fromName)} ➔ ${abbrStation(next.toName)}</div>
-                <div class="time-pair">
-                  <div><span class="tp-label">Parte</span><span class="tp-dep">${fmtTime(next.orarioPartenza)}</span></div>
-                  <span class="tp-arrow">→</span>
-                  <div><span class="tp-label">Arriva</span><span class="tp-arr">${fmtTime(next.orarioArrivoStimato)}</span></div>
-                </div>
-                <div class="dur-line">${durationLine(next.orarioPartenza, next.orarioArrivo, next.ritardo)}</div>
-                <div class="train-meta">
-                  <span>${next.categoria} ${next.numeroTreno}</span>
-                  ${delayBadge(next.ritardo)}
-                </div>
-              </div>
-              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-                <button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi tratta salvata">${BOOKMARK_SVG}</button>
-                <div class="platform-box">
-                  <span>BINARIO</span>
-                  <strong>${next.binarioPartenza}</strong>
-                </div>
-              </div>
-            </div>
-
-            ${stops.length ? `
-              <div class="route-header">
-                <span class="section-tag" style="margin:0;">Percorso (${stops.length} fermate)</span>
-                <button class="toggle-stops" onclick="expandedStops.leg1=!expandedStops.leg1;renderCurrentView();">
-                  ${expandedStops.leg1 ? 'Mostra meno ▴' : `Tutte (${stops.length}) ▾`}
-                </button>
-              </div>
-              ${stopsToShow.map(f => `
-                <div class="stop-row">
-                  <div class="stop-left">
-                    <span class="dot ${f.effettuata ? 'done' : f.inArrivo ? 'next' : ''}"></span>
-                    <span>${abbrStation(f.stazione)}</span>
-                  </div>
-                  <div>
-                    ${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}
-                    <span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span>
-                  </div>
-                </div>
-              `).join("")}
-            ` : ''}
-
-            <div style="margin-top:12px;color:var(--muted);font-size:13px;">
-              Arrivo a ${abbrStation(next.toName)}${binArr}
-            </div>
-          </div>
-        `;
+        content.innerHTML = `<div class="hero-card"><div class="hero-top"><div><div class="section-tag" style="color:var(--gold);">Tratta Salvata · ${abbrStation(next.fromName)} ➔ ${abbrStation(next.toName)}</div><div class="time-pair"><div><span class="tp-label">Parte</span><span class="tp-dep">${fmtTime(next.orarioPartenza)}</span></div><span class="tp-arrow">→</span><div><span class="tp-label">Arriva</span><span class="tp-arr">${fmtTime(next.orarioArrivoStimato)}</span></div></div><div class="dur-line">${durationLine(next.orarioPartenza, next.orarioArrivo, next.ritardo)}</div><div class="train-meta"><span>${next.categoria} ${next.numeroTreno}${destLabel(next.destinazione)}</span>${delayBadge(next.ritardo)}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;"><button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi tratta salvata">${BOOKMARK_SVG}</button><div class="platform-box"><span>BINARIO</span><strong>${next.binarioPartenza}</strong></div></div></div>${stops.length ? `<div class="route-header"><span class="section-tag" style="margin:0;">Percorso (${stops.length} fermate)</span><button class="toggle-stops" onclick="haptic(); expandedStops.leg1=!expandedStops.leg1;renderCurrentView();">${expandedStops.leg1 ? 'Mostra meno ▴' : `Tutte (${stops.length}) ▾`}</button></div>${stopsToShow.map(f => `<div class="stop-row"><div class="stop-left"><span class="dot ${f.effettuata ? 'done' : f.inArrivo ? 'next' : ''}"></span><span>${abbrStation(f.stazione)}</span></div><div>${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}<span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span></div></div>`).join("")}` : ''}<div style="margin-top:12px;color:var(--muted);font-size:13px;">Arrivo a ${abbrStation(next.toName)}${binArr}</div></div>`;
         return;
       }
-
-      // Tratta Salvata con cambio (2 tratte)
-      const next = pinned.data;
-      const l1 = next.leg1, l2 = next.leg2;
+      const next = pinned.data, l1 = next.leg1, l2 = next.leg2;
       const totDelay = Math.max(0, Math.round((l2.orarioArrivoStimato - l2.orarioArrivo) / 60000));
-      const stops1 = l1.fermate || [];
-      const stops2 = l2.fermate || [];
-      const stops1Show = expandedStops.leg1 ? stops1 : stops1.slice(0, 4);
-      const stops2Show = expandedStops.leg2 ? stops2 : stops2.slice(0, 4);
-
-      content.innerHTML = `
-        <div class="hero-card">
-          <div class="hero-top">
-            <div>
-              <div class="section-tag" style="color:var(--gold);">Tratta Salvata · ${abbrStation(l1.fromName)} ➔ ${abbrStation(l2.toName)}</div>
-              <div class="time-pair">
-                <div><span class="tp-label">Parte</span><span class="tp-dep">${fmtTime(l1.orarioPartenza)}</span></div>
-                <span class="tp-arrow">→</span>
-                <div><span class="tp-label">Arriva</span><span class="tp-arr">${fmtTime(l2.orarioArrivoStimato)}</span></div>
-              </div>
-              <div class="dur-line">${durationLine(l1.orarioPartenza, l2.orarioArrivo, totDelay)}</div>
-            </div>
-            <button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi tratta salvata">${BOOKMARK_SVG}</button>
-          </div>
-
-          <!-- 1ª TRATTA con BIN. 1° grande -->
-          <div class="leg-row">
-            <div>
-              <div class="section-tag">1ª tratta · ${abbrStation(l1.fromName)} ➔ ${abbrStation(l1.toName)}</div>
-              <div class="leg-line">
-                <strong>${fmtTime(l1.orarioPartenza)}</strong>
-                <span class="up-arrow">→</span>
-                <strong>${fmtTime(l1.orarioArrivoStimato)}</strong>
-              </div>
-              <div class="train-meta">
-                <span>${l1.categoria} ${l1.numeroTreno}</span>
-                ${delayBadge(l1.ritardo)}
-              </div>
-            </div>
-            <div class="platform-box">
-              <span>BIN. 1°</span>
-              <strong>${l1.binarioPartenza}</strong>
-            </div>
-          </div>
-
-          ${stops1.length ? `
-            <div class="route-header">
-              <span class="section-tag" style="margin:0;">Fermate 1ª tratta</span>
-              <button class="toggle-stops" onclick="expandedStops.leg1=!expandedStops.leg1;renderCurrentView();">
-                ${expandedStops.leg1 ? 'Chiudi ▴' : `Tutte (${stops1.length}) ▾`}
-              </button>
-            </div>
-            ${stops1Show.map(f => `
-              <div class="stop-row">
-                <div class="stop-left">
-                  <span class="dot ${f.effettuata ? 'done' : ''}"></span>
-                  <span>${abbrStation(f.stazione)}</span>
-                </div>
-                <div>
-                  ${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}
-                  <span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span>
-                </div>
-              </div>
-            `).join("")}
-          ` : ''}
-
-          <!-- BANNER INTERSCAMBIO -->
-          <div class="transfer-banner">
-            <div>
-              <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gold);margin-bottom:4px;text-transform:uppercase;">
-                Cambio a ${abbrStation(next.hubArrivalName)}
-              </div>
-              <div style="font-size:13px;">
-                Arrivi al <strong>bin. ${l1.binarioArrivo}</strong> ➔ riparti dal <strong>bin. ${l2.binarioPartenza}</strong>
-              </div>
-            </div>
-            <div class="wait-time">
-              <strong>${next.waitRealMin} min</strong>
-              <span>per il cambio</span>
-            </div>
-          </div>
-
-          <!-- 2ª TRATTA con BIN. 2° grande (identico a BIN. 1°) -->
-          <div class="leg-row">
-            <div>
-              <div class="section-tag">2ª tratta · ${abbrStation(l2.fromName)} ➔ ${abbrStation(l2.toName)}</div>
-              <div class="leg-line">
-                <strong>${fmtTime(l2.orarioPartenza)}</strong>
-                <span class="up-arrow">→</span>
-                <strong>${fmtTime(l2.orarioArrivoStimato)}</strong>
-              </div>
-              <div class="train-meta">
-                <span>${l2.categoria} ${l2.numeroTreno}</span>
-                ${delayBadge(l2.ritardo)}
-              </div>
-            </div>
-            <div class="platform-box">
-              <span>BIN. 2°</span>
-              <strong>${l2.binarioPartenza}</strong>
-            </div>
-          </div>
-
-          ${stops2.length ? `
-            <div class="route-header">
-              <span class="section-tag" style="margin:0;">Fermate 2ª tratta</span>
-              <button class="toggle-stops" onclick="expandedStops.leg2=!expandedStops.leg2;renderCurrentView();">
-                ${expandedStops.leg2 ? 'Chiudi ▴' : `Tutte (${stops2.length}) ▾`}
-              </button>
-            </div>
-            ${stops2Show.map(f => `
-              <div class="stop-row">
-                <div class="stop-left">
-                  <span class="dot ${f.effettuata ? 'done' : ''}"></span>
-                  <span>${abbrStation(f.stazione)}</span>
-                </div>
-                <div>
-                  ${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}
-                  <span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span>
-                </div>
-              </div>
-            `).join("")}
-          ` : ''}
-
-          ${next.backupLeg2 ? `
-            <div class="backup-box">
-              <strong>Piano B da ${abbrStation(l2.fromName)}:</strong> treno <strong>${next.backupLeg2.numeroTreno}</strong> delle <strong>${fmtTime(next.backupLeg2.orarioPartenza)}</strong> (bin. ${next.backupLeg2.binarioPartenza})
-            </div>
-          ` : ''}
-        </div>
-      `;
+      const stops1 = l1.fermate || [], stops2 = l2.fermate || [];
+      const stops1Show = expandedStops.leg1 ? stops1 : stops1.slice(0, 4), stops2Show = expandedStops.leg2 ? stops2 : stops2.slice(0, 4);
+      content.innerHTML = `<div class="hero-card"><div class="hero-top"><div><div class="section-tag" style="color:var(--gold);">Tratta Salvata · ${abbrStation(l1.fromName)} ➔ ${abbrStation(l2.toName)}</div><div class="time-pair"><div><span class="tp-label">Parte</span><span class="tp-dep">${fmtTime(l1.orarioPartenza)}</span></div><span class="tp-arrow">→</span><div><span class="tp-label">Arriva</span><span class="tp-arr">${fmtTime(l2.orarioArrivoStimato)}</span></div></div><div class="dur-line">${durationLine(l1.orarioPartenza, l2.orarioArrivo, totDelay)}</div></div><button class="pin-btn active" onclick="unpinCurrent()" title="Rimuovi tratta salvata">${BOOKMARK_SVG}</button></div><div class="leg-row"><div><div class="section-tag">1ª tratta · ${abbrStation(l1.fromName)} ➔ ${abbrStation(l1.toName)}</div><div class="leg-line"><strong>${fmtTime(l1.orarioPartenza)}</strong><span class="up-arrow">→</span><strong>${fmtTime(l1.orarioArrivoStimato)}</strong></div><div class="train-meta"><span>${l1.categoria} ${l1.numeroTreno}${destLabel(l1.destinazione)}</span>${delayBadge(l1.ritardo)}</div></div><div class="platform-box"><span>BIN. 1°</span><strong>${l1.binarioPartenza}</strong></div></div>${stops1.length ? `<div class="route-header"><span class="section-tag" style="margin:0;">Fermate 1ª tratta</span><button class="toggle-stops" onclick="haptic(); expandedStops.leg1=!expandedStops.leg1;renderCurrentView();">${expandedStops.leg1 ? 'Chiudi ▴' : `Tutte (${stops1.length}) ▾`}</button></div>${stops1Show.map(f => `<div class="stop-row"><div class="stop-left"><span class="dot ${f.effettuata ? 'done' : ''}"></span><span>${abbrStation(f.stazione)}</span></div><div>${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}<span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span></div></div>`).join("")}` : ''}<div class="transfer-banner"><div><div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gold);margin-bottom:4px;text-transform:uppercase;">Cambio a ${abbrStation(next.hubArrivalName)}</div><div style="font-size:13px;">Arrivi al <strong>bin. ${l1.binarioArrivo}</strong> ➔ riparti dal <strong>bin. ${l2.binarioPartenza}</strong></div></div><div class="wait-time"><strong>${next.waitRealMin} min</strong><span>per il cambio</span></div></div><div class="leg-row"><div><div class="section-tag">2ª tratta · ${abbrStation(l2.fromName)} ➔ ${abbrStation(l2.toName)}</div><div class="leg-line"><strong>${fmtTime(l2.orarioPartenza)}</strong><span class="up-arrow">→</span><strong>${fmtTime(l2.orarioArrivoStimato)}</strong></div><div class="train-meta"><span>${l2.categoria} ${l2.numeroTreno}${destLabel(l2.destinazione)}</span>${delayBadge(l2.ritardo)}</div></div><div class="platform-box"><span>BIN. 2°</span><strong>${l2.binarioPartenza}</strong></div></div>${stops2.length ? `<div class="route-header"><span class="section-tag" style="margin:0;">Fermate 2ª tratta</span><button class="toggle-stops" onclick="haptic(); expandedStops.leg2=!expandedStops.leg2;renderCurrentView();">${expandedStops.leg2 ? 'Chiudi ▴' : `Tutte (${stops2.length}) ▾`}</button></div>${stops2Show.map(f => `<div class="stop-row"><div class="stop-left"><span class="dot ${f.effettuata ? 'done' : ''}"></span><span>${abbrStation(f.stazione)}</span></div><div>${f.effettiva && f.ritardo > 0 ? `<span class="time-actual">${fmtTime(f.effettiva)}</span>` : ''}<span class="time-sched ${f.effettiva && f.ritardo > 0 ? 'crossed' : ''}">${fmtTime(f.programmata)}</span></div></div>`).join("")}` : ''}${next.backupLeg2 ? `<div class="backup-box"><strong>Piano B da ${abbrStation(l2.fromName)}:</strong> treno <strong>${next.backupLeg2.numeroTreno}</strong> delle <strong>${fmtTime(next.backupLeg2.orarioPartenza)}</strong> (bin. ${next.backupLeg2.binarioPartenza})</div>` : ''}</div>`;
     }
-
-    initSelectors();
-    renderWindowSelect();
-    updatePinBadge();
-    loadTrains();
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    }
+    syncSelectDisplays(); updatePinBadge(); loadTrains();
+    if ("serviceWorker" in navigator) { navigator.serviceWorker.register("/sw.js").catch(() => {}); }
   </script>
 </body>
 </html>
